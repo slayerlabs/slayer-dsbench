@@ -1,0 +1,9 @@
+name: mcq-przyklad
+version: 0.1.0
+license: CC0-1.0
+collection_license: CC0-1.0
+visibility: internal
+format: mcq
+source_url: https://example.invalid/mcq
+sample: sample.jsonl
+records: 2

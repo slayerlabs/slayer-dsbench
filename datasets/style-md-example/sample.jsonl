@@ -1,0 +1,2 @@
+{"id": "md-0001", "source": "synthetic", "verified": true, "messages": [{"role": "user", "content": "Podaj krótką definicję inflacji."}, {"role": "assistant", "content": "Inflacja to trwały wzrost ogólnego poziomu cen, przez który za tę samą kwotę kupisz mniej niż wcześniej."}]}
+{"id": "md-0002", "source": "synthetic", "verified": true, "messages": [{"role": "user", "content": "Przeredaguj na uprzejme: Wyślij mi to teraz."}, {"role": "assistant", "content": "Czy mógłbyś przesłać mi to, gdy znajdziesz chwilę? Z góry dziękuję."}]}

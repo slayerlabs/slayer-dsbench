@@ -1,0 +1,30 @@
+# Formatka mcq — pytania wielokrotnego wyboru (question + options[] + explanation).
+# Kolejny dowód schema-agnostyczności: tekst z listy STRINGÓW (options[]), silnik bez zmian.
+name: slayer-dataset-format
+version: mcq
+text_fields: ["question", "options[]", "explanation"]   # options[] = lista stringów
+id_field: id
+
+card_schema:
+  fields:
+    name:               {type: str,  required: true}
+    version:            {type: str,  required: true}
+    license:            {type: str,  required: true}
+    collection_license: {type: str,  required: false}
+    visibility:         {type: str,  required: true, enum: [internal, external]}
+    format:             {type: str,  required: false}
+    source_url:         {type: str,  required: true}
+    sha256:             {type: str,  required: false}
+    sample:             {type: str,  required: true}
+    records:            {type: int,  required: false}
+
+record_schema:
+  fields:
+    id:          {type: str,  required: true}
+    source:      {type: str,  required: false}     # provenance
+    question:    {type: str,  required: true}
+    options:     {type: list, required: true}
+    answer:      {required: true}                   # indeks LUB etykieta — bez sztywnego typu
+    explanation: {type: str,  required: false}
+
+checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]

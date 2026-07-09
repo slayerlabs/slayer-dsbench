@@ -4,7 +4,7 @@ import argparse
 import pathlib
 import sys
 from .engine import audit
-from .schema import load_yaml
+from .schema import load_card
 from . import registry
 
 CARD_TEMPLATE = """name: <nazwa>
@@ -25,7 +25,7 @@ def _resolve_format(card_path, fmt_arg):
     if fmt_arg:
         return fmt_arg
     try:
-        name = str(load_yaml(card_path).get("format") or "v1")
+        name = str(load_card(card_path).get("format") or "v1")
     except Exception:
         name = "v1"
     return f"formats/{name}.yaml"

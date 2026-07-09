@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import pathlib
 from .models import Issue, Ctx, Report
-from .schema import load_yaml, validate_declarative
+from .schema import load_yaml, load_card, validate_declarative
 from . import registry
 from . import checks as _checks  # noqa: F401  (import rejestruje checki)
 
@@ -24,7 +24,7 @@ def load_records(path) -> list:
 
 def audit(card_path, format_path, data_path=None, schema_only=False) -> Report:
     card_path = pathlib.Path(card_path)
-    card = load_yaml(card_path)
+    card = load_card(card_path)
     fmt = load_yaml(format_path)
     issues: list = []
 
