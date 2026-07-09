@@ -1,23 +1,26 @@
-# Formatka v2 — DOWÓD modularności (S1): dodane wymagane pole `speaker_count`,
-# zmieniony enum widoczności. TEN SAM silnik, ZERO zmian w kodzie (git diff engine/ = 0).
+# Formatka v2 — DOWÓD modularności (S1): dodane wymagane `speaker_count`, rozszerzony enum widoczności.
+# TEN SAM silnik, ZERO zmian w kodzie (git diff dsbench/engine.py = 0).
 name: slayer-dataset-format
 version: 2
 text_field: text
+id_field: id
 
 card_schema:
   fields:
-    name:        {type: str,  required: true}
-    version:     {type: str,  required: true}
-    license:     {type: str,  required: true}
-    visibility:  {type: str,  required: true, enum: [internal, external, restricted]}
-    source_url:  {type: str,  required: true}
-    sha256:      {type: str,  required: false}
-    sample:      {type: str,  required: true}
-    records:     {type: int,  required: false}
-    bytes:       {type: int,  required: false}
+    name:               {type: str,  required: true}
+    version:            {type: str,  required: true}
+    license:            {type: str,  required: true}
+    collection_license: {type: str,  required: false}
+    visibility:         {type: str,  required: true, enum: [internal, external, restricted]}
+    source_url:         {type: str,  required: true}
+    sha256:             {type: str,  required: false}
+    sample:             {type: str,  required: true}
+    records:            {type: int,  required: false}
+    bytes:              {type: int,  required: false}
 
 record_schema:
   fields:
+    id:            {type: str,  required: false}
     text:          {type: str,  required: true}
     speaker:       {type: str,  required: false}
     speaker_count: {type: int,  required: true}     # NOWE wymagane pole (v2)
@@ -25,4 +28,4 @@ record_schema:
     term:          {type: str,  required: false}
     word_count:    {type: int,  required: false}
 
-checks: [license, pii, dedup, decontam, stats, integrity]
+checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]

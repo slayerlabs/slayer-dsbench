@@ -1,26 +1,29 @@
 # Formatka v1 — DEKLARATYWNA. Podmiana tego pliku NIE wymaga zmian w silniku (S1).
 name: slayer-dataset-format
 version: 1
-text_field: text            # które pole jest tekstem (checki to czytają, nie kod)
+text_field: text
+id_field: id
 
 card_schema:
   fields:
-    name:        {type: str,  required: true}
-    version:     {type: str,  required: true}
-    license:     {type: str,  required: true}
-    visibility:  {type: str,  required: true, enum: [internal, external]}
-    source_url:  {type: str,  required: true}
-    sha256:      {type: str,  required: false}
-    sample:      {type: str,  required: true}
-    records:     {type: int,  required: false}
-    bytes:       {type: int,  required: false}
+    name:               {type: str,  required: true}
+    version:            {type: str,  required: true}
+    license:            {type: str,  required: true}      # licencja TEKSTU/danych (źródło)
+    collection_license: {type: str,  required: false}     # licencja kolekcji/metadanych (domyślnie CC0)
+    visibility:         {type: str,  required: true, enum: [internal, external]}
+    source_url:         {type: str,  required: true}
+    sha256:             {type: str,  required: false}
+    sample:             {type: str,  required: true}
+    records:            {type: int,  required: false}
+    bytes:              {type: int,  required: false}
 
 record_schema:
   fields:
+    id:          {type: str,  required: false}
     text:        {type: str,  required: true}
     speaker:     {type: str,  required: false}
     date:        {type: str,  required: false}
     term:        {type: str,  required: false}
     word_count:  {type: int,  required: false}
 
-checks: [license, pii, dedup, decontam, stats, integrity]
+checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]

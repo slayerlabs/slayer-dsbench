@@ -1,6 +1,7 @@
 name: sejm-speeches
 version: 0.2.0
-license: CC0-1.0
+license: CC0-1.0              # tekst (stenogramy — dane publiczne)
+collection_license: CC0-1.0  # kolekcja/metadane
 visibility: external
 source_url: https://github.com/<anon>/Sejm/releases/tag/v0.2.0
 sample: sample.jsonl

@@ -41,7 +41,7 @@ def test_missing_required_field_fails():
 def test_s1_modularnosc_podmiana_formatki():
     """S1: ten sam sample + ten sam silnik. v1 PASS, v2 (nowe wymagane pole) FAIL. Kod silnika nietknięty."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl", '{"text":"abc","speaker":"X"}\n')
+        _w(d, "sample.jsonl", '{"id":"a","text":"abc","speaker":"X"}\n')
         card = _card(d)
         r1 = audit(card, V1)
         r2 = audit(card, V2)
@@ -51,37 +51,49 @@ def test_s1_modularnosc_podmiana_formatki():
 
 
 def test_s2_integrity_wykrywa_podmiane():
-    """S2: sha256 w karcie wykrywa podmianę pliku danych."""
     with tempfile.TemporaryDirectory() as d:
-        data = _w(d, "data.jsonl", '{"text":"abc"}\n')
+        data = _w(d, "data.jsonl", '{"id":"a","text":"abc"}\n')
         sh = hashlib.sha256(data.read_bytes()).hexdigest()
         card = _card(d, "data.jsonl", extra=f"sha256: {sh}\n")
         ok = audit(card, V1, data_path=str(data))
         assert ok.verdict == "PASS", ok.to_markdown()
-        data.write_text('{"text":"abcd"}\n', encoding="utf-8")  # podmiana
+        data.write_text('{"id":"a","text":"abcd"}\n', encoding="utf-8")  # podmiana
         bad = audit(card, V1, data_path=str(data))
         assert bad.verdict == "FAIL"
         assert any(i.check == "integrity" for i in bad.by_level("error")), bad.to_markdown()
 
 
 def test_s3_determinizm():
-    """S3 (proxy CI==lokalnie): ten sam input → identyczny raport."""
     c = ROOT / "datasets" / "sejm" / "card.yaml"
     assert audit(c, V1).to_dict() == audit(c, V1).to_dict()
 
 
 def test_pii_pesel_failuje():
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl", '{"text":"numer 44051401359 w zdaniu"}\n')
+        _w(d, "sample.jsonl", '{"id":"a","text":"numer 44051401359 w zdaniu"}\n')
         rep = audit(_card(d), V1)
         assert any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
 
 def test_dedup_failuje():
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl", '{"text":"ten sam"}\n{"text":"ten sam"}\n')
+        _w(d, "sample.jsonl", '{"id":"a","text":"ten sam"}\n{"id":"b","text":"ten sam"}\n')
         rep = audit(_card(d), V1)
         assert any(i.check == "dedup" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def test_uniqueid_dup_failuje():
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", '{"id":"a","text":"x"}\n{"id":"a","text":"y"}\n')
+        rep = audit(_card(d), V1)
+        assert any(i.check == "uniqueid" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def test_empty_text_failuje():
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", '{"id":"a","text":"   "}\n')  # białe znaki -> pusty
+        rep = audit(_card(d), V1)
+        assert any(i.check == "empty" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
 
 if __name__ == "__main__":
