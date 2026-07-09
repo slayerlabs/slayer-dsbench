@@ -1,0 +1,30 @@
+name: dsbench validate
+
+on:
+  pull_request:
+    paths: ["datasets/**", "formats/**", "dsbench/**", "pyproject.toml"]
+  push:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalacja (rdzeń = ten sam silnik co lokalnie, S3)
+        run: pip install -e .
+      - name: Testy silnika
+        run: python tests/test_dsbench.py
+      - name: Audyt kart datasetów (bramka)
+        run: |
+          set -e
+          fail=0
+          for card in $(find datasets -name card.yaml); do
+            echo "::group::$card"
+            dsbench audit --card "$card" --format formats/v1.yaml || fail=1
+            echo "::endgroup::"
+          done
+          exit $fail

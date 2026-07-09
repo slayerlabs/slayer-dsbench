@@ -1,0 +1,5 @@
+# sha256(znormalizowany_tekst) rekordów eval-setów (dekontaminacja). Surowych danych NIE trzymamy.
+# format: jeden hash na linię. Normalizacja: lower + collapse whitespace.
+# (przykładowe — nie pokrywają się z próbką Sejm)
+0000000000000000000000000000000000000000000000000000000000000001
+0000000000000000000000000000000000000000000000000000000000000002
