@@ -20,9 +20,13 @@ card_schema:
 
 record_schema:
   fields:
-    id:       {type: str,  required: true}
-    source:   {type: str,  required: true}     # provenance per rekord (zasada #3 slayerlabs/datasets)
-    messages: {type: list, required: true}     # [{role, content}]
-    verified: {type: bool, required: false}
+    id:         {type: str,  required: true}
+    source:     {type: str,  required: true}     # provenance per rekord (zasada #3 slayerlabs/datasets)
+    messages:   {type: list, required: true}     # [{role, content}]
+    task:       {type: str,  required: false}    # zaobserwowane u nich (explain/rewrite/...)
+    style_tags: {type: list, required: false}    # zaobserwowane u nich
+    verified:   {type: bool, required: false}
+    checks:     {type: dict, required: false}    # ich reguła #1: checks.no_benchmark_source (walidacja NESTED = zostaje)
+    meta:       {type: dict, required: false}    # domain/notes/raw_model/...
 
 checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]
