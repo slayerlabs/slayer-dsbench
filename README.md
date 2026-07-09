@@ -2,7 +2,7 @@
 
 Bramka **CI + formatka** do walidacji datasetów. Ktoś wrzuca **kartę datasetu** (PR), CI weryfikuje pola i jakość → zielone/czerwone. Silnik jest **schema-agnostyczny**: podmiana formatki nie dotyka kodu.
 
-> Próbne repo. Jak dojrzeje → scala się z głównym repo datasetów. Notatki badawcze (dialektyka + bramki): `PrivateSlayNotes/01_ArekSłota/08_07_Datasety-CI-Formatka`.
+> Repo w fazie próbnej. Gdy dojrzeje → scala się z głównym repozytorium datasetów. Decyzje projektowe i research prowadzone są w wewnętrznych notatkach (dialektyka + bramki jakości).
 
 ## Instalacja
 ```bash
