@@ -1,8 +1,7 @@
-# Formatka v2 — DOWÓD modularności (S1): dodane wymagane `speaker_count`, rozszerzony enum widoczności.
-# TEN SAM silnik, ZERO zmian w kodzie (git diff dsbench/engine.py = 0).
+# Formatka v2 — DOWÓD modularności (S1): dodane wymagane `speaker_count`. Silnik bez zmian.
 name: slayer-dataset-format
 version: 2
-text_field: text
+text_fields: [text]
 id_field: id
 
 card_schema:
@@ -12,6 +11,7 @@ card_schema:
     license:            {type: str,  required: true}
     collection_license: {type: str,  required: false}
     visibility:         {type: str,  required: true, enum: [internal, external, restricted]}
+    format:             {type: str,  required: false}
     source_url:         {type: str,  required: true}
     sha256:             {type: str,  required: false}
     sample:             {type: str,  required: true}

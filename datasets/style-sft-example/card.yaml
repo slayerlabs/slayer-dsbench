@@ -1,0 +1,9 @@
+name: style-sft-przyklad
+version: 0.1.0
+license: MIT                  # dane syntetyczne (rewrite'y)
+collection_license: CC0-1.0
+visibility: internal
+format: style-sft            # rekord chat (messages[]) — patrz formats/style-sft.yaml
+source_url: https://example.invalid/style-sft
+sample: sample.jsonl
+records: 3

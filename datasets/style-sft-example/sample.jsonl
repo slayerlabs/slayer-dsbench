@@ -1,0 +1,3 @@
+{"id": "ex-0001", "source": "synthetic", "verified": true, "messages": [{"role": "user", "content": "Wyjaśnij krótko, czym jest fotosynteza."}, {"role": "assistant", "content": "To proces, w którym rośliny z dwutlenku węgla i wody, dzięki światłu, wytwarzają cukry i tlen."}]}
+{"id": "ex-0002", "source": "synthetic", "verified": true, "messages": [{"role": "user", "content": "Przeredaguj komunikat: Nie można otworzyć pliku."}, {"role": "assistant", "content": "Nie udało się otworzyć pliku. Sprawdź, czy istnieje, i spróbuj ponownie."}]}
+{"id": "ex-0003", "source": "synthetic", "verified": true, "messages": [{"role": "user", "content": "Napisz jedno zdanie zachęty do nauki."}, {"role": "assistant", "content": "Każdy mały krok dziś przybliża Cię do celu jutro."}]}

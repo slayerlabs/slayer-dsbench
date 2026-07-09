@@ -18,13 +18,13 @@ jobs:
         run: pip install -e .
       - name: Testy silnika
         run: python tests/test_dsbench.py
-      - name: Audyt kart datasetów (bramka)
+      - name: Audyt kart datasetów (bramka; formatka z pola `format` karty)
         run: |
           set -e
           fail=0
           for card in $(find datasets -name card.yaml); do
             echo "::group::$card"
-            dsbench audit --card "$card" --format formats/v1.yaml || fail=1
+            dsbench audit --card "$card" || fail=1
             echo "::endgroup::"
           done
           exit $fail

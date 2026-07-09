@@ -1,17 +1,16 @@
-"""Statystyki próbki (info, nigdy nie failuje). Pole tekstowe bierze z formatki (text_field)."""
+"""Statystyki próbki (info, nigdy nie failuje). Tekst nested-aware (text_fields)."""
 from __future__ import annotations
 from ..models import Issue
 from ..registry import check
+from ..textextract import texts
 
 
 @check("stats")
 def run(ctx) -> list:
-    tf = ctx.formatka.get("text_field", "text")
     n = len(ctx.records)
     chars = words = 0
     for rec in ctx.records:
-        t = rec.get(tf)
-        if isinstance(t, str):
+        for t in texts(rec, ctx.formatka):
             chars += len(t)
             words += len(t.split())
     avg = round(words / n, 1) if n else 0

@@ -1,0 +1,28 @@
+# Formatka style-sft — most do slayerlabs/datasets (rekord chat: messages[] + provenance).
+# DOWÓD, że silnik jest kompatybilny z ich formatem BEZ zmian w kodzie — inna formatka, ten sam silnik.
+name: slayer-dataset-format
+version: style-sft
+text_fields: ["messages[].content"]     # tekst wyłuskiwany z zagnieżdżenia (fix false-green)
+id_field: id
+
+card_schema:
+  fields:
+    name:               {type: str,  required: true}
+    version:            {type: str,  required: true}
+    license:            {type: str,  required: true}
+    collection_license: {type: str,  required: false}
+    visibility:         {type: str,  required: true, enum: [internal, external]}
+    format:             {type: str,  required: false}
+    source_url:         {type: str,  required: true}
+    sha256:             {type: str,  required: false}
+    sample:             {type: str,  required: true}
+    records:            {type: int,  required: false}
+
+record_schema:
+  fields:
+    id:       {type: str,  required: true}
+    source:   {type: str,  required: true}     # provenance per rekord (zasada #3 slayerlabs/datasets)
+    messages: {type: list, required: true}     # [{role, content}]
+    verified: {type: bool, required: false}
+
+checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]

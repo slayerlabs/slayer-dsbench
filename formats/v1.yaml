@@ -1,7 +1,7 @@
 # Formatka v1 — DEKLARATYWNA. Podmiana tego pliku NIE wymaga zmian w silniku (S1).
 name: slayer-dataset-format
 version: 1
-text_field: text
+text_fields: [text]         # skąd checki biorą tekst (lista; wspiera nested np. messages[].content)
 id_field: id
 
 card_schema:
@@ -11,6 +11,7 @@ card_schema:
     license:            {type: str,  required: true}      # licencja TEKSTU/danych (źródło)
     collection_license: {type: str,  required: false}     # licencja kolekcji/metadanych (domyślnie CC0)
     visibility:         {type: str,  required: true, enum: [internal, external]}
+    format:             {type: str,  required: false}     # którą formatkę użyć (domyślnie v1)
     source_url:         {type: str,  required: true}
     sha256:             {type: str,  required: false}
     sample:             {type: str,  required: true}
