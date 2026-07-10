@@ -4,6 +4,8 @@ name: slayer-dataset-format
 version: style-sft
 text_fields: ["messages[].content"]     # tekst wyłuskiwany z zagnieżdżenia (fix false-green)
 id_field: id
+license_field: license      # licencja PER DOKUMENT/ŹRÓDŁO (opcjonalna; dynaword/speakleash)
+source_field: source        # provenance per rekord — grupuje licencje per źródło w raporcie
 
 card_schema:
   fields:
@@ -13,6 +15,7 @@ card_schema:
     collection_license: {type: str,  required: false}
     visibility:         {type: str,  required: true, enum: [internal, external]}
     format:             {type: str,  required: false}
+    source_manifest:    {type: str,  required: false}     # plik mapy źródło→licencja (sources.yaml) obok karty
     source_url:         {type: str,  required: true}
     sha256:             {type: str,  required: false}
     sample:             {type: str,  required: true}
@@ -22,6 +25,7 @@ record_schema:
   fields:
     id:         {type: str,  required: true}
     source:     {type: str,  required: true}     # provenance per rekord (zasada #3 slayerlabs/datasets)
+    license:    {type: str,  required: false}    # licencja PER DOKUMENT (SPDX); brak → parasol karty
     messages:   {type: list, required: true}     # [{role, content}]
     task:       {type: str,  required: false}    # zaobserwowane u nich (explain/rewrite/...)
     style_tags: {type: list, required: false}    # zaobserwowane u nich

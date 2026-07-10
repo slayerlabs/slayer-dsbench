@@ -56,13 +56,17 @@ Inne komendy: `dsbench validate` (tylko schema), `dsbench card` (raport md), `ds
 ## Reguły bramki
 | poziom | co |
 |---|---|
-| ❌ **FAIL** | brak pola / zły typ / zły enum · `external` bez otwartej licencji · **PESEL** · **duplikaty treści** · **nakładka z eval-setem** · niezgodne `sha256`/liczba rekordów · zduplikowane `id` · pusty `text` |
-| ⚠️ **WARN** | email/telefon · licencja nie-SPDX · `internal` bez licencji |
-| ℹ️ **INFO** | statystyki, licencje, `sha256` |
+| ❌ **FAIL** | brak pola / zły typ / zły enum · `external` bez otwartej licencji · **dokument per-rekord z licencją NIE-otwartą (NC/ND/zamknięta)** pod `external` · **PESEL** · **duplikaty treści** · **nakładka z eval-setem** · niezgodne `sha256`/liczba rekordów · zduplikowane `id` · pusty `text` |
+| ⚠️ **WARN** | email/telefon · licencja nie-SPDX (karta lub per-dok) · `internal` bez licencji |
+| ℹ️ **INFO** | statystyki, licencje, **rozkład licencji per źródło**, `sha256` |
 
 ## Formatka (`formats/v1.yaml`) i modularność
-Deklaratywna: `card_schema` / `record_schema` (pola, typy, `required`, `enum`), `text_field`/`id_field`, lista `checks`.
+Deklaratywna: `card_schema` / `record_schema` (pola, typy, `required`, `enum`), `text_field`/`id_field`, `license_field`/`source_field`, lista `checks`.
 **Podmiana formatki = inny plik, silnik bez zmian** (porównaj `v1.yaml` ↔ `v2.yaml`). Pola → deklaratywne (0 kodu przy zmianie); reguły proceduralne → pluginy w rejestrze (`@check`; nowy plik → wpis w `checks/__init__.py`).
+
+**Licencja dwupoziomowa (dynaword).** Karta niesie *parasol* — `license` (tekst) + `collection_license` (metadane). Ale realny blob to **kompilacja wielu źródeł o różnych licencjach**, więc licencja bywa **per dokument/źródło**: dołóż w `sample.jsonl` pola `license` (SPDX) i `source`, a formatka wskaże je przez `license_field`/`source_field`. Pod `external` **każdy** dokument musi być otwarty — jeden NC/ND/zamknięty = ❌ (chroni przed zatruciem licencyjnym); bramka raportuje rozkład licencji per źródło. Rekord bez `license` dziedziczy parasol karty (pełna wsteczna zgodność).
+
+**Licencja per-źródło przez manifest (`sources.yaml`).** Gdy rekordy niosą tylko `source` (bez `license`) — jak realny SpeakLeash/dynaword — dołóż obok karty plik `sources.yaml` (mapa `źródło → {license: SPDX}`, forma zagnieżdżona lub płaska `{źródło: SPDX}`) i wskaż go w karcie: `source_manifest: sources.yaml`. Bramka rozwiązuje licencję per źródło z manifestu; **precedencja: licencja rekordu > manifest > parasol karty**. Reguły egzekucji bez zmian (NC/ND → ❌, nierozpoznane/`UNKNOWN` → ⚠️ pod `external`). `source_manifest` wskazany, a pliku brak → ❌.
 
 ---
 
