@@ -6,13 +6,3 @@ build/
 dist/
 .venv/
 *.tmp
-
-# LaTeX build (paper/ — PDF budowany w CI jako artefakt)
-*.aux
-*.log
-*.out
-*.fls
-*.fdb_latexmk
-*.synctex.gz
-*.toc
-*.pdf
