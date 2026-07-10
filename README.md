@@ -66,6 +66,8 @@ Deklaratywna: `card_schema` / `record_schema` (pola, typy, `required`, `enum`), 
 
 **Licencja dwupoziomowa (dynaword).** Karta niesie *parasol* — `license` (tekst) + `collection_license` (metadane). Ale realny blob to **kompilacja wielu źródeł o różnych licencjach**, więc licencja bywa **per dokument/źródło**: dołóż w `sample.jsonl` pola `license` (SPDX) i `source`, a formatka wskaże je przez `license_field`/`source_field`. Pod `external` **każdy** dokument musi być otwarty — jeden NC/ND/zamknięty = ❌ (chroni przed zatruciem licencyjnym); bramka raportuje rozkład licencji per źródło. Rekord bez `license` dziedziczy parasol karty (pełna wsteczna zgodność).
 
+**Licencja per-źródło przez manifest (`sources.yaml`).** Gdy rekordy niosą tylko `source` (bez `license`) — jak realny SpeakLeash/dynaword — dołóż obok karty plik `sources.yaml` (mapa `źródło → {license: SPDX}`, forma zagnieżdżona lub płaska `{źródło: SPDX}`) i wskaż go w karcie: `source_manifest: sources.yaml`. Bramka rozwiązuje licencję per źródło z manifestu; **precedencja: licencja rekordu > manifest > parasol karty**. Reguły egzekucji bez zmian (NC/ND → ❌, nierozpoznane/`UNKNOWN` → ⚠️ pod `external`). `source_manifest` wskazany, a pliku brak → ❌.
+
 ---
 
 ## Migracja do docelowej bazy datasetów

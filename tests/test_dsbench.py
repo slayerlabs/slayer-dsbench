@@ -225,6 +225,87 @@ def test_is_open_odrzuca_nc_nd():
     assert _is_open("MIT") is True
 
 
+def test_license_manifest_nc_failuje():
+    """external + source_manifest: rekordy niosą tylko `source` (bez license); manifest mapuje
+    src_b→CC-BY-NC-4.0 → efektywna licencja NC pod external → error license/data → FAIL."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sources.yaml", "sources:\n  src_a: {license: CC0-1.0}\n  src_b: {license: CC-BY-NC-4.0}\n")
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Pierwszy dokument z wolnego zrodla.","source":"src_a"}\n'
+           '{"id":"b","text":"Drugi dokument z niekomercyjnego zrodla.","source":"src_b"}\n')
+        rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
+        assert rep.verdict == "FAIL", rep.to_markdown()
+        assert any(i.check == "license" and i.level == "error" and i.where == "data"
+                   and ("NIE-otwart" in i.msg or "CC-BY-NC" in i.msg)
+                   for i in rep.issues), rep.to_markdown()
+
+
+def test_license_manifest_unknown_ostrzega():
+    """external + manifest z UNKNOWN dla jednego źródła (reszta otwarta) → warn license/data,
+    BEZ błędu (nierozpoznana per-źródło nie failuje) → PASS."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sources.yaml", "sources:\n  src_a: {license: CC0-1.0}\n  src_c: {license: UNKNOWN}\n")
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Dokument z otwartego zrodla.","source":"src_a"}\n'
+           '{"id":"b","text":"Dokument ze zrodla o nieznanej licencji.","source":"src_c"}\n')
+        rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
+        assert rep.verdict == "PASS", rep.to_markdown()
+        assert any(i.check == "license" and i.level == "warn" and i.where == "data"
+                   for i in rep.issues), rep.to_markdown()
+        assert not any(i.check == "license" and i.level == "error"
+                       for i in rep.issues), rep.to_markdown()
+
+
+def test_license_manifest_rekord_nadpisuje():
+    """Licencja w rekordzie WYGRYWA nad manifestem: manifest src_b→CC-BY-ND-4.0, ale rekord
+    niesie license: CC0-1.0 → brak błędu; INFO per-źródło pokazuje CC0-1.0 (nie ND)."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sources.yaml", "sources:\n  src_b: {license: CC-BY-ND-4.0}\n")
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Rekord z wlasna licencja otwarta.","source":"src_b","license":"CC0-1.0"}\n')
+        rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
+        assert not any(i.check == "license" and i.level == "error"
+                       for i in rep.issues), rep.to_markdown()
+        info = [i for i in rep.issues
+                if i.check == "license" and i.level == "info" and i.where == "data"
+                and "per źródło" in i.msg]
+        assert info, rep.to_markdown()
+        assert "CC0-1.0" in info[0].msg and "ND" not in info[0].msg, info[0].msg
+
+
+def test_license_manifest_brak_pliku_failuje():
+    """Karta wskazuje source_manifest, ale plik nie istnieje → error license/data
+    ('source_manifest' + 'brak pliku') → FAIL."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Rekord odwolujacy sie do brakujacego manifestu.","source":"src_a"}\n')
+        rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
+        assert rep.verdict == "FAIL", rep.to_markdown()
+        assert any(i.check == "license" and i.level == "error" and i.where == "data"
+                   and "source_manifest" in i.msg and "brak pliku" in i.msg
+                   for i in rep.issues), rep.to_markdown()
+
+
+def test_license_manifest_plaski_i_zagniezdzony():
+    """Obie formy manifestu — płaska {src: SPDX} ORAZ zagnieżdżona {sources: {src: {license: SPDX}}}
+    — dają ten sam wynik: INFO per-źródło wymienia src_a i src_c, verdykt PASS."""
+    data = ('{"id":"a","text":"Dokument z pierwszego zrodla.","source":"src_a"}\n'
+            '{"id":"b","text":"Dokument z trzeciego zrodla.","source":"src_c"}\n')
+    manifests = {
+        "plaski": "src_a: CC0-1.0\nsrc_c: UNKNOWN\n",
+        "zagniezdzony": "sources:\n  src_a: {license: CC0-1.0}\n  src_c: {license: UNKNOWN}\n",
+    }
+    for wariant, manifest in manifests.items():
+        with tempfile.TemporaryDirectory() as d:
+            _w(d, "sources.yaml", manifest)
+            _w(d, "sample.jsonl", data)
+            rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
+            assert rep.verdict == "PASS", f"{wariant}: {rep.to_markdown()}"
+            assert any(i.check == "license" and i.level == "info" and i.where == "data"
+                       and "per źródło" in i.msg and "src_a" in i.msg and "src_c" in i.msg
+                       for i in rep.issues), f"{wariant}: {rep.to_markdown()}"
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     ok = 0

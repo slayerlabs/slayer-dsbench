@@ -16,6 +16,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from ..models import Issue
 from ..registry import check
+from ..schema import load_yaml
 
 OPEN = ("CC0", "CC-BY", "CC-PD", "PDDL", "ODC-BY", "ODBL", "MIT", "APACHE", "PUBLICDOMAIN")
 RESTRICTED = ("-NC", "-ND")   # non-commercial / no-derivatives → NIE do wolnej redystrybucji
@@ -63,27 +64,50 @@ def run(ctx) -> list:
     return out
 
 
+def _load_manifest(ctx):
+    """(mapa {source: license_str}, issues). Pusta mapa gdy karta nie deklaruje source_manifest.
+    Akceptuje {sources: {src: {license: SPDX, ...}}} albo płaskie {src: SPDX}."""
+    name = ctx.card.get("source_manifest")
+    if not name:
+        return {}, []
+    path = ctx.root / str(name)
+    if not path.exists():
+        return {}, [Issue("error", "license", "data", f"source_manifest wskazany, brak pliku: {name}")]
+    try:
+        raw = load_yaml(path) or {}
+    except Exception as e:
+        return {}, [Issue("error", "license", "data", f"source_manifest nieczytelny ({name}): {e}")]
+    src_map = raw.get("sources", raw) if isinstance(raw, dict) else {}
+    out = {}
+    for s, v in (src_map or {}).items():
+        lic = str((v.get("license") if isinstance(v, dict) else v) or "").strip()
+        if lic:
+            out[str(s)] = lic
+    return out, []
+
+
 def _per_record(ctx, vis) -> list:
     lf = ctx.formatka.get("license_field")
-    if not lf:
-        return []                                  # formatka nie deklaruje licencji per-rekord
     sf = ctx.formatka.get("source_field")
+    manifest, out = _load_manifest(ctx)            # out startuje z ewentualnym błędem manifestu
+    if not lf and not manifest:
+        return out                                 # brak per-rekord i brak manifestu → parasol karty
     per_source: dict = defaultdict(Counter)        # źródło -> {licencja: liczba}
     covered = 0
     for rec in ctx.records:
         if not isinstance(rec, dict):
             continue
-        val = rec.get(lf)
-        if not isinstance(val, str) or not val.strip():
-            continue                               # rekord bez licencji → obowiązuje parasol karty
-        covered += 1
+        rec_lic = rec.get(lf) if lf else None
+        rec_lic = rec_lic.strip() if isinstance(rec_lic, str) and rec_lic.strip() else None
         src = rec.get(sf) if sf else None
         src = src.strip() if isinstance(src, str) and src.strip() else "(brak źródła)"
-        per_source[src][val.strip()] += 1
+        eff = rec_lic or manifest.get(src)         # licencja rekordu WYGRYWA, manifest uzupełnia
+        if not eff:
+            continue                               # brak jednej i drugiej → parasol karty
+        covered += 1
+        per_source[src][eff] += 1
     if covered == 0:
-        return []                                  # nikt nie niesie licencji → parasol karty
-
-    out = []
+        return out                                 # nikt nie niesie licencji → parasol karty
     summary = "; ".join(
         f"{src}: " + ", ".join(f"{l}×{n}" for l, n in sorted(cnt.items()))
         for src, cnt in sorted(per_source.items())

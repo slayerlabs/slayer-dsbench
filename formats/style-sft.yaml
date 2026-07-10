@@ -15,6 +15,7 @@ card_schema:
     collection_license: {type: str,  required: false}
     visibility:         {type: str,  required: true, enum: [internal, external]}
     format:             {type: str,  required: false}
+    source_manifest:    {type: str,  required: false}     # plik mapy źródło→licencja (sources.yaml) obok karty
     source_url:         {type: str,  required: true}
     sha256:             {type: str,  required: false}
     sample:             {type: str,  required: true}

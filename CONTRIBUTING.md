@@ -35,6 +35,8 @@ Kilkadziesiąt–100 rekordów, **per-dokument**, JSON Lines. Wymagane pole: `te
 Pola rekordu definiuje formatka (`formats/v1.yaml` → `record_schema`).
 
 > **Licencja per-dokument (opcjonalna).** Gdy dataset łączy **wiele źródeł o różnych licencjach** (styl speakleash/dynaword), dołóż do rekordu `source` i `license` (SPDX). Bramka grupuje licencje **per źródło**; pod `external` **każdy** dokument musi być otwarty — jeden NC/ND/zamknięty = FAIL. Rekord bez `license` dziedziczy `license` z karty (parasol).
+>
+> **Wariant per-źródło (manifest `sources.yaml`).** Gdy rekordy mają tylko `source` (bez `license`) — realny SpeakLeash/dynaword — zamiast stemplować każdy rekord dołóż obok karty `sources.yaml` (mapa `źródło → {license: SPDX}`) i w karcie `source_manifest: sources.yaml`. Precedencja: licencja rekordu > manifest > parasol karty; reguły egzekucji bez zmian.
 
 ## 4. Sprawdź lokalnie (zielone przed PR)
 ```bash

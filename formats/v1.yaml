@@ -14,6 +14,7 @@ card_schema:
     collection_license: {type: str,  required: false}     # licencja kolekcji/metadanych (domyślnie CC0)
     visibility:         {type: str,  required: true, enum: [internal, external]}
     format:             {type: str,  required: false}     # którą formatkę użyć (domyślnie v1)
+    source_manifest:    {type: str,  required: false}     # plik mapy źródło→licencja (sources.yaml) obok karty
     source_url:         {type: str,  required: true}
     sha256:             {type: str,  required: false}
     sample:             {type: str,  required: true}
