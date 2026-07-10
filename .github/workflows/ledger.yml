@@ -1,0 +1,26 @@
+name: Ledger INDEX (check)
+
+# Pilnuje, że docs/INDEX.md ma aktualny auto-ledger względem frontmatteru węzłów.
+# Lekki (sam python stdlib) — osobno od ciężkiego builda LaTeX.
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - 'scripts/generate-ledger.py'
+      - '.github/workflows/ledger.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'scripts/generate-ledger.py'
+      - '.github/workflows/ledger.yml'
+  workflow_dispatch:
+
+jobs:
+  ledger-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ledger aktualny?
+        run: python3 scripts/generate-ledger.py --check
