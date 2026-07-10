@@ -156,6 +156,75 @@ def test_cli_audit_smoke():
     assert rc == 0
 
 
+def test_license_per_record_restricted_failuje():
+    """external + rekord z licencją NC (CC-BY-NC-4.0) → błąd license/data → FAIL."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Pierwszy dokument otwarty.","source":"sejm","license":"CC0-1.0"}\n'
+           '{"id":"b","text":"Drugi dokument niekomercyjny.","source":"lektury","license":"CC-BY-NC-4.0"}\n'
+           '{"id":"c","text":"Trzeci dokument otwarty.","source":"lektury","license":"CC-BY-SA-3.0"}\n')
+        rep = audit(_card(d), V1)
+        assert rep.verdict == "FAIL", rep.to_markdown()
+        assert any(i.check == "license" and i.level == "error" and i.where == "data"
+                   for i in rep.issues), rep.to_markdown()
+
+
+def test_license_per_record_unknown_ostrzega():
+    """external + jedna licencja nierozpoznana (Proprietary), reszta otwarta →
+    warn license/data, ale BEZ błędu (nierozpoznana sama w sobie nie failuje)."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Dokument otwarty pierwszy.","source":"src-a","license":"CC0-1.0"}\n'
+           '{"id":"b","text":"Dokument o licencji wlasnosciowej.","source":"src-b","license":"Proprietary"}\n'
+           '{"id":"c","text":"Dokument otwarty drugi.","source":"src-a","license":"CC0-1.0"}\n')
+        rep = audit(_card(d), V1)
+        assert any(i.check == "license" and i.level == "warn" and i.where == "data"
+                   for i in rep.issues), rep.to_markdown()
+        assert not any(i.check == "license" and i.level == "error"
+                       for i in rep.issues), rep.to_markdown()
+
+
+def test_license_per_record_open_passes():
+    """external + rekordy wyłącznie otwarte (CC0/CC-BY-SA) + jeden bez pola licencji →
+    brak błędu license, info per-źródło w data, PASS."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Pierwszy otwarty dokument.","source":"biblioteka","license":"CC0-1.0"}\n'
+           '{"id":"b","text":"Drugi otwarty dokument.","source":"archiwum","license":"CC-BY-SA-3.0"}\n'
+           '{"id":"c","text":"Trzeci dokument bez licencji per-rekord."}\n')
+        rep = audit(_card(d), V1)
+        assert not any(i.check == "license" and i.level == "error"
+                       for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "license" and i.level == "info" and i.where == "data"
+                   and "per źródło" in i.msg for i in rep.issues), rep.to_markdown()
+        assert rep.verdict == "PASS", rep.to_markdown()
+
+
+def test_license_per_record_dormant_gdy_brak_pola():
+    """Rekordy bez pola licencji (styl sejm) pod V1 → ścieżka per-rekord uśpiona:
+    brak jakiegokolwiek issue license w data; parasol karty (info license/card) nadal jest."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Zwykly rekord bez licencji.","speaker":"Posel X"}\n'
+           '{"id":"b","text":"Inny rekord bez pola licencji.","speaker":"Posel Y"}\n')
+        rep = audit(_card(d), V1)
+        assert not any(i.check == "license" and i.where == "data"
+                       for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "license" and i.where == "card"
+                   for i in rep.issues), rep.to_markdown()
+        assert rep.verdict == "PASS", rep.to_markdown()
+
+
+def test_is_open_odrzuca_nc_nd():
+    """Bugfix: NC/ND NIE są otwarte mimo prefiksu CC-BY; SA/CC0/MIT są otwarte."""
+    from dsbench.checks.license import _is_open
+    assert _is_open("CC-BY-NC-4.0") is False
+    assert _is_open("CC-BY-ND-4.0") is False
+    assert _is_open("CC-BY-SA-3.0") is True
+    assert _is_open("CC0-1.0") is True
+    assert _is_open("MIT") is True
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     ok = 0

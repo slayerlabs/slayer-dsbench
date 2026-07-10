@@ -3,6 +3,8 @@ name: slayer-dataset-format
 version: 2
 text_fields: [text]
 id_field: id
+license_field: license      # licencja PER DOKUMENT/ŹRÓDŁO (opcjonalna; dynaword/speakleash)
+source_field: source        # provenance per rekord — grupuje licencje per źródło w raporcie
 
 card_schema:
   fields:
@@ -27,5 +29,7 @@ record_schema:
     date:          {type: str,  required: false}
     term:          {type: str,  required: false}
     word_count:    {type: int,  required: false}
+    source:        {type: str,  required: false}    # provenance per rekord (grupowanie licencji)
+    license:       {type: str,  required: false}    # licencja PER DOKUMENT (SPDX); brak → parasol karty
 
 checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]

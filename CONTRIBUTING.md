@@ -34,6 +34,8 @@ Kilkadziesiąt–100 rekordów, **per-dokument**, JSON Lines. Wymagane pole: `te
 ```
 Pola rekordu definiuje formatka (`formats/v1.yaml` → `record_schema`).
 
+> **Licencja per-dokument (opcjonalna).** Gdy dataset łączy **wiele źródeł o różnych licencjach** (styl speakleash/dynaword), dołóż do rekordu `source` i `license` (SPDX). Bramka grupuje licencje **per źródło**; pod `external` **każdy** dokument musi być otwarty — jeden NC/ND/zamknięty = FAIL. Rekord bez `license` dziedziczy `license` z karty (parasol).
+
 ## 4. Sprawdź lokalnie (zielone przed PR)
 ```bash
 dsbench audit --card datasets/<nazwa>/card.yaml --format formats/v1.yaml
@@ -44,8 +46,8 @@ Kod wyjścia `0` = PASS, `1` = FAIL.
 Otwórz PR. CI odpali **ten sam** audyt + testy silnika. Uzupełnij checklistę z szablonu PR.
 
 ## Reguły bramki
-- **BŁĄD (FAIL):** brak wymaganego pola / zły typ / zły enum · `external` bez otwartej licencji · **PESEL** w danych · **duplikaty treści** · **nakładka z eval-setem** · niezgodne `sha256` · niezgodna liczba rekordów · zduplikowane `id` · pusty `text`.
-- **OSTRZEŻENIE:** email/telefon w danych · licencja nie-SPDX · `internal` bez licencji.
+- **BŁĄD (FAIL):** brak wymaganego pola / zły typ / zły enum · `external` bez otwartej licencji · **dokument per-rekord z licencją NIE-otwartą (NC/ND/zamknięta)** pod `external` · **PESEL** w danych · **duplikaty treści** · **nakładka z eval-setem** · niezgodne `sha256` · niezgodna liczba rekordów · zduplikowane `id` · pusty `text`.
+- **OSTRZEŻENIE:** email/telefon w danych · licencja nie-SPDX (karta lub per-dok) · `internal` bez licencji.
 - **INFO:** statystyki, licencje, `sha256` OK/pominięte.
 
 ## Wewnętrzne vs zewnętrzne

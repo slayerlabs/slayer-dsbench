@@ -4,6 +4,8 @@ name: slayer-dataset-format
 version: mcq
 text_fields: ["question", "options[]", "explanation"]   # options[] = lista stringów
 id_field: id
+license_field: license      # licencja PER DOKUMENT/ŹRÓDŁO (opcjonalna; dynaword/speakleash)
+source_field: source        # provenance per rekord — grupuje licencje per źródło w raporcie
 
 card_schema:
   fields:
@@ -22,6 +24,7 @@ record_schema:
   fields:
     id:          {type: str,  required: true}
     source:      {type: str,  required: false}     # provenance
+    license:     {type: str,  required: false}     # licencja PER DOKUMENT (SPDX); brak → parasol karty
     question:    {type: str,  required: true}
     options:     {type: list, required: true}
     answer:      {required: true}                   # indeks LUB etykieta — bez sztywnego typu
