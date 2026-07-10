@@ -18,7 +18,8 @@ from ..models import Issue
 from ..registry import check
 from ..schema import load_yaml
 
-OPEN = ("CC0", "CC-BY", "CC-PD", "PDDL", "ODC-BY", "ODBL", "MIT", "APACHE", "PUBLICDOMAIN")
+OPEN = ("CC0", "CC-BY", "CC-PD", "PDDL", "ODC-BY", "ODBL", "MIT", "APACHE",
+        "PUBLICDOMAIN", "PUBLIC-DOMAIN", "PUBLIC DOMAIN")
 RESTRICTED = ("-NC", "-ND")   # non-commercial / no-derivatives → NIE do wolnej redystrybucji
 
 

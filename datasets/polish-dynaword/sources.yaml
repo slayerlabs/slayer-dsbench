@@ -1,0 +1,16 @@
+# Manifest zrodel polish-dynaword (source -> SPDX) — z karty datasetu HF SlayerLab/polish-dynaword v0.2.1.
+# Wszystkie zrodla OTWARTE (review licencyjny dynaword; zrodla nieotwarte sa WYKLUCZONE, nie trzymane).
+# Rekordy niosa te sama licencje per-dokument (kolumna `license`) — manifest to backup + dokumentacja.
+sources:
+  eurlex: {license: CC-BY-4.0}
+  parliamentary: {license: "public-domain (official documents)"}
+  wikisource: {license: CC-BY-SA-3.0}
+  wikipedia: {license: CC-BY-SA-3.0}
+  dziennik_ustaw: {license: "public-domain (official documents)"}
+  wolne_lektury: {license: "CC-BY-SA-4.0 / Wolna Sztuka 1.3"}
+  1000_novels: {license: CC-BY-4.0}
+  wikiquote: {license: CC-BY-SA-3.0}
+  eltec_pol: {license: CC-BY-4.0}
+  wikivoyage: {license: CC-BY-SA-3.0}
+  wikibooks: {license: CC-BY-SA-3.0}
+  wikinews: {license: CC-BY-2.5}

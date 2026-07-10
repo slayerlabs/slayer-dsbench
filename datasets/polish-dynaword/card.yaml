@@ -1,0 +1,11 @@
+name: polish-dynaword
+version: 0.2.1
+license: cc-by-sa-4.0             # kolekcja: copyleft dziedziczony ze źródeł CC-BY-SA (Wikipedia/Wikisource/Wolne Lektury)
+collection_license: cc-by-sa-4.0
+visibility: external
+format: v1
+source_url: https://huggingface.co/datasets/SlayerLab/polish-dynaword
+source_manifest: sources.yaml
+sample: sample.jsonl
+# sample.jsonl = REALNY podglad (3 rekordy/zrodlo z parquetow v0.2.1, tekst przyciety ~1200 zn.; patrz NOTICE.md).
+# BEZ records/sha256: pelny korpus to 2.49M dok. w parquet per zrodlo (data/<zrodlo>/<zrodlo>.parquet), nie w repo.
