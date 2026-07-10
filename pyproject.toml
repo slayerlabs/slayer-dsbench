@@ -3,7 +3,7 @@ name = "slayer-dsbench"
 version = "0.1.0"
 description = "Bramka CI + formatka do walidacji datasetów (schema-agnostyczna)"
 requires-python = ">=3.10"
-dependencies = ["pyyaml>=6"]
+dependencies = ["pyyaml>=6", "pyarrow>=15"]
 
 [project.scripts]
 dsbench = "dsbench.cli:main"

@@ -9,6 +9,8 @@ from . import checks as _checks  # noqa: F401  (import rejestruje checki)
 
 
 def load_records(path) -> list:
+    if str(path).lower().endswith(".parquet"):
+        return _load_parquet(path)
     recs = []
     with open(path, encoding="utf-8") as f:
         for n, ln in enumerate(f):
@@ -20,6 +22,19 @@ def load_records(path) -> list:
             except Exception as e:
                 recs.append({"__parse_error__": f"linia {n+1}: {e}"})
     return recs
+
+
+def _load_parquet(path) -> list:
+    """Parquet (dynaword/HF) -> lista rekordów. Wymaga pyarrow (opcjonalna zależność).
+    Czyta cały plik do pamięci (jak JSONL) — na pełnych blobach podawaj sample/shard."""
+    try:
+        import pyarrow.parquet as pq
+    except Exception as e:
+        return [{"__parse_error__": f"parquet wymaga pyarrow (pip install pyarrow): {e}"}]
+    try:
+        return pq.read_table(path).to_pylist()
+    except Exception as e:
+        return [{"__parse_error__": f"parquet nieczytelny ({path}): {e}"}]
 
 
 def audit(card_path, format_path, data_path=None, schema_only=False) -> Report:

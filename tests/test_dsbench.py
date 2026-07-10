@@ -306,6 +306,45 @@ def test_license_manifest_plaski_i_zagniezdzony():
                        for i in rep.issues), f"{wariant}: {rep.to_markdown()}"
 
 
+def test_public_domain_liczy_sie_jako_otwarte():
+    """dynaword: 'public-domain (official documents)' (parliamentary/dziennik_ustaw) jest OTWARTE, nie WARN."""
+    from dsbench.checks.license import _is_open
+    assert _is_open("public-domain (official documents)") is True
+    assert _is_open("CC-BY-2.5") is True
+    assert _is_open("CC-BY-SA-4.0 / Wolna Sztuka 1.3") is True
+
+
+def test_loader_parquet_czyta_rekordy():
+    """Silnik czyta .parquet (dynaword/HF), nie tylko JSONL — po rozszerzeniu pliku."""
+    import pyarrow as pa, pyarrow.parquet as pq
+    from dsbench.engine import load_records
+    with tempfile.TemporaryDirectory() as d:
+        p = pathlib.Path(d) / "s.parquet"
+        pq.write_table(pa.table({"id": ["a", "b"], "text": ["abc", "def"],
+                                 "source": ["x", "x"], "license": ["CC-BY-4.0", "CC-BY-4.0"]}), p)
+        recs = load_records(str(p))
+        assert [r["id"] for r in recs] == ["a", "b"]
+        assert recs[0]["text"] == "abc" and recs[0]["license"] == "CC-BY-4.0"
+
+
+def test_audit_parquet_data_path_passes():
+    """Audyt z --data wskazującym .parquet (external, licencja otwarta per-dok) → PASS."""
+    import pyarrow as pa, pyarrow.parquet as pq
+    with tempfile.TemporaryDirectory() as d:
+        p = pathlib.Path(d) / "data.parquet"
+        pq.write_table(pa.table({"id": ["a"], "text": ["Neutralny tekst encyklopedyczny."],
+                                 "source": ["wikipedia"], "license": ["CC-BY-SA-3.0"]}), p)
+        rep = audit(_card(d), V1, data_path=str(p))
+        assert rep.verdict == "PASS", rep.to_markdown()
+
+
+def test_dynaword_sample_passes():
+    """Realny fixture polish-dynaword (12 źródeł, licencje otwarte) → PASS, zero błędów i ostrzeżeń."""
+    rep = audit(ROOT / "datasets" / "polish-dynaword" / "card.yaml", V1)
+    assert rep.verdict == "PASS", rep.to_markdown()
+    assert not rep.by_level("warn"), rep.to_markdown()
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     ok = 0
