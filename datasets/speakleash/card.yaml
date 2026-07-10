@@ -1,0 +1,12 @@
+name: speakleash-live-proof
+version: 0.1.0
+license: other                    # parasol; realny SpeakLeash to kompilacja o RÓŻNYCH licencjach — per-źródło niżej
+collection_license: CC0-1.0
+visibility: external
+format: v1
+source_url: https://huggingface.co/datasets/kacperwikiel/speakleash-tokenizer-5gb-sample
+source_manifest: sources.yaml
+sample: sample.jsonl
+# BEZ `records`: integrity liczy total TYLKO na --data (nie na próbce). Żywy audyt
+# (Krok 3) podaje podzbiory shardów (_0006 = 3 doki) → sztywne `records` = fałszywy FAIL.
+# BEZ `sha256`: brak stałego hasza dla wielu wejść → integrity da INFO „pominięto".
