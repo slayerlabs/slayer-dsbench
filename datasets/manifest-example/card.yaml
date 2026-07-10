@@ -1,0 +1,10 @@
+name: manifest-example
+version: 0.1.0
+license: CC0-1.0                 # parasol (przykład publikowalny)
+collection_license: CC0-1.0
+visibility: external
+format: v1
+source_url: https://github.com/slayerlabs/slayer-dsbench (przyklad wariantu B)
+source_manifest: sources.yaml
+sample: sample.jsonl
+records: 6

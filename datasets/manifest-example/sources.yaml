@@ -1,0 +1,5 @@
+# Przykład mapy źródło→licencja (wariant B). Ref: maggi-vct.
+sources:
+  src_a: {license: CC0-1.0}         # otwarte
+  src_b: {license: CC-BY-SA-4.0}    # otwarte (share-alike)
+  src_c: {license: UNKNOWN}         # nierozpoznane → WARN pod external (nie blokuje)

@@ -1,0 +1,6 @@
+{"id":"m-0001","text":"Pierwszy przykładowy dokument o wolnym tekście.","source":"src_a"}
+{"id":"m-0002","text":"Drugi dokument z tego samego wolnego źródła.","source":"src_a"}
+{"id":"m-0003","text":"Trzeci dokument, źródło na licencji share-alike.","source":"src_b"}
+{"id":"m-0004","text":"Czwarty dokument z tego samego źródła SA.","source":"src_b"}
+{"id":"m-0005","text":"Piąty dokument, licencja źródła nieznana.","source":"src_c"}
+{"id":"m-0006","text":"Szósty dokument, także źródło nieznane.","source":"src_c"}
