@@ -16,6 +16,9 @@ DASHONLY=re.compile(r"^[\-–—·•\*\s]{1,4}$")  # linia = sam myslnik/punkt/
 _PLLET="a-zA-Z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017b"
 LATIN2={"\u00b6":"\u015b","\u00b1":"\u0105","\u00b3":"\u0142","\u00bc":"\u017a","\u00bf":"\u017c"}  # Latin-2/CP1250 mojibake: ¶=ś ±=ą ³=ł ¼=ź ¿=ż
 MOJI=re.compile(r"(?<=["+_PLLET+r"])([\u00b6\u00b1\u00b3\u00bc\u00bf])(?=["+_PLLET+r"])")  # MID-WORD (litera-obie-strony) = zero-FP (odróżnia 'materia³' od legit 'm³'/'5±2')
+# heavily-garbled doc signal (FP-safe, high-precision): ± po malej-literze (=ą-mojibake, legit ± jest digit±digit)
+# LUB ¶/¹/¬ letter-adjacent (rzadko legit). NIE ³/¼/¿/£ (ambiguous: m³/¼/¿hiszp/£funt legit). Drop = FP-safe density (Mierniczy).
+GARBLED=re.compile(r"(?<=[a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c])\u00b1|(?<=[a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c])[\u00b6\u00b9\u00ac]|[\u00b6\u00b9\u00ac](?=[a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c])")
 # intra-word '?': lowercase-PL ? lowercase-PL, nie w URL (bez =,http,www,.php,.html w poblizu -> per-match check)
 QMID=re.compile(r"([a-ząćęłńóśźż])\?([a-ząćęłńóśźż])")
 URLish=re.compile(r"[=]|https?://|www\.|\.php|\.html|\.aspx")
@@ -94,14 +97,15 @@ def main():
     print(f"  leading-junk (bare-dash) strip: {junk_hits} docs")
     print(f"  U+FFFD (decode-junk) strip: {fffd_hits} docs")
     print(f"  Latin-2 mojibake remap (¶±³¼¿->śąłźż): {latin2_hits} docs")
-    print(f"  chars {ch0:,}->{ch1:,} ({100*(ch0-ch1)/ch0:.1f}%) | docs<200-po: {short}")
+    garbled=sum(1 for x in outtx if len(x)>=200 and GARBLED.search(x))
+    print(f"  chars {ch0:,}->{ch1:,} ({100*(ch0-ch1)/ch0:.1f}%) | docs<200-po: {short} | heavily-garbled drop: {garbled}")
     print("  -- sample stripped-blocks (FP-check czy menu/nav) --")
     for s in sample_blocks: print("    ", repr(s[:90]))
     if a.apply:
-        keep=[i for i,x in enumerate(outtx) if len(x)>=200]
+        keep=[i for i,x in enumerate(outtx) if len(x)>=200 and not GARBLED.search(x)]
         cols["text"]=outtx
         newcols={c:[cols[c][i] for i in keep] for c in cols}
         pq.write_table(pa.table(newcols,schema=t.schema), fp, compression="zstd")
-        print(f"  APPLIED -> {fp} ({len(keep)}/{N}, drop {N-len(keep)} short-po-polish)")
+        print(f"  APPLIED -> {fp} ({len(keep)}/{N}, drop {N-len(keep)}: short-po-polish + heavily-garbled)")
 
 if __name__=="__main__": main()
