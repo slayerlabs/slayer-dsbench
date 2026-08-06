@@ -13,6 +13,9 @@ _ws=re.compile(r"\s+")
 def norm(l): return _ws.sub(" ", l.strip())
 STRONA=re.compile(r"^\s*(Strona\s+\d+\s+z\s+\d+|Str\.?\s*\d+\s*/\s*\d+)\b.*?(\n|$)", re.I)
 DASHONLY=re.compile(r"^[\-–—·•\*\s]{1,4}$")  # linia = sam myslnik/punkt/krotki separator (Arka '-\nJakby')
+_PLLET="a-zA-Z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017b"
+LATIN2={"\u00b6":"\u015b","\u00b1":"\u0105","\u00b3":"\u0142","\u00bc":"\u017a","\u00bf":"\u017c"}  # Latin-2/CP1250 mojibake: ¶=ś ±=ą ³=ł ¼=ź ¿=ż
+MOJI=re.compile(r"(?<=["+_PLLET+r"])([\u00b6\u00b1\u00b3\u00bc\u00bf])(?=["+_PLLET+r"])")  # MID-WORD (litera-obie-strony) = zero-FP (odróżnia 'materia³' od legit 'm³'/'5±2')
 # intra-word '?': lowercase-PL ? lowercase-PL, nie w URL (bez =,http,www,.php,.html w poblizu -> per-match check)
 QMID=re.compile(r"([a-ząćęłńóśźż])\?([a-ząćęłńóśźż])")
 URLish=re.compile(r"[=]|https?://|www\.|\.php|\.html|\.aspx")
@@ -41,11 +44,14 @@ def main():
         df.update({norm(l) for l in x.split("\n") if len(norm(l))>=3})
     thr=max(2,int(a.min_ratio*N)); hi={k for k,c in df.items() if c>=thr}
     # per-doc polish
-    strona_hits=qmark_hits=block_lines_removed=leadlist_hits=junk_hits=fffd_hits=0; blocks_removed=0; sample_blocks=[]
+    strona_hits=qmark_hits=block_lines_removed=leadlist_hits=junk_hits=fffd_hits=latin2_hits=0; blocks_removed=0; sample_blocks=[]
     outtx=[]
     for x in tx:
         x2=x
         if "\ufffd" in x2: x2=x2.replace("\ufffd",""); fffd_hits+=1  # U+FFFD replacement-char (decode-junk, Arka '[znak]ci')
+        if any(c in x2 for c in LATIN2):
+            x2n=MOJI.sub(lambda m: LATIN2[m.group(1)], x2)
+            if x2n!=x2: x2=x2n; latin2_hits+=1  # Latin-2 mid-word mojibake remap (¶±³¼¿->śąłźż)
         m=STRONA.match(x2)
         if m: x2=x2[m.end():]; strona_hits+=1
         # leading-junk: strip startowe linie ktore sa samym myslnikiem/punktem (Arka '-\nJakby' -> 'Jakby')
@@ -87,6 +93,7 @@ def main():
     print(f"  leading-nav-list strip: {leadlist_hits} docs")
     print(f"  leading-junk (bare-dash) strip: {junk_hits} docs")
     print(f"  U+FFFD (decode-junk) strip: {fffd_hits} docs")
+    print(f"  Latin-2 mojibake remap (¶±³¼¿->śąłźż): {latin2_hits} docs")
     print(f"  chars {ch0:,}->{ch1:,} ({100*(ch0-ch1)/ch0:.1f}%) | docs<200-po: {short}")
     print("  -- sample stripped-blocks (FP-check czy menu/nav) --")
     for s in sample_blocks: print("    ", repr(s[:90]))
