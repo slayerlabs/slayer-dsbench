@@ -33,4 +33,4 @@ record_schema:
     checks:     {type: dict, required: false}    # ich reguła #1: checks.no_benchmark_source (walidacja NESTED = zostaje)
     meta:       {type: dict, required: false}    # domain/notes/raw_model/...
 
-checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]
+checks: [license, uniqueid, empty, pii, artifacts, dedup, decontam, stats, integrity]
