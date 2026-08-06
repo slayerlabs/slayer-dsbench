@@ -31,4 +31,4 @@ record_schema:
     answer:      {required: true}                   # indeks LUB etykieta — bez sztywnego typu
     explanation: {type: str,  required: false}
 
-checks: [license, uniqueid, empty, pii, dedup, decontam, stats, integrity]
+checks: [license, uniqueid, empty, pii, artifacts, dedup, decontam, stats, integrity]
