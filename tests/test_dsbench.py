@@ -107,6 +107,55 @@ def test_dedup_failuje():
         assert any(i.check == "dedup" and i.level == "error" for i in rep.issues)
 
 
+def test_pii_natid_nip_regon_failuje():
+    """national-ID oznaczony NIP/REGON MUSI FAIL — pokrycie ponad sam PESEL."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", '{"id":"a","text":"Firma NIP: 123-456-32-18 oraz REGON 123456785 dziala."}\n')
+        rep = audit(_card(d), V1)
+        assert any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def test_pii_garbled_pesel_labeled_failuje():
+    """OCR-garbled PESEL (checksum-INVALID) ale OZNACZONY słowem 'PESEL' → keyword-layer łapie
+    (sam checksum by zgubił). Realne znalezisko z korpusu HPLT."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", '{"id":"a","text":"ustawa PESEL 78031482766 w dniu wydania dokumentu"}\n')
+        rep = audit(_card(d), V1)
+        assert any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def test_pii_bare_11cyfr_nie_pesel_bez_fp():
+    """FP-safe: gołe 11 cyfr NIE-będące PESELem (URL/kod, checksum-invalid) → BRAK błędu pii.
+    Naiwne \\d{11} dawało tu 95 fałszywych trafień na realnym korpusie."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", '{"id":"a","text":"plik 13355153470 oraz kod 32716250378 w katalogu"}\n')
+        rep = audit(_card(d), V1)
+        assert not any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def test_pii_kontekst_bez_numeru_nie_fp():
+    """FP-safe: wzmianka 'PESEL' BEZ przylegającego numeru → NIE błąd (label sam nie jest PII)."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", '{"id":"a","text":"podaj numer PESEL w formularzu i zatwierdz wniosek"}\n')
+        rep = audit(_card(d), V1)
+        assert not any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def test_neardup_wykrywa_fuzzy():
+    """neardup (opt-in via formatka): near-identyczne docy (ten sam tekst + doklejony ogon) → warn,
+    którego exact `dedup` (sha1) nie łapie."""
+    with tempfile.TemporaryDirectory() as d:
+        fmt = _w(d, "fmt.yaml",
+                 "name: t\nversion: 1\ntext_fields: [text]\nid_field: id\n"
+                 "record_schema:\n  fields:\n    text: {type: str, required: true}\n"
+                 "checks: [neardup]\n")
+        _w(d, "sample.jsonl",
+           '{"id":"a","text":"Ala ma kota i pies biega po ogrodzie wieczorem dnia pierwszego maja roku pomyslnie"}\n'
+           '{"id":"b","text":"Ala ma kota i pies biega po ogrodzie wieczorem dnia pierwszego maja roku pomyslnie dzisiaj"}\n')
+        rep = audit(_card(d), fmt)
+        assert any(i.check == "neardup" and i.level == "warn" for i in rep.issues), rep.to_markdown()
+
+
 def test_uniqueid_dup_failuje():
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sample.jsonl", '{"id":"a","text":"x"}\n{"id":"a","text":"y"}\n')
