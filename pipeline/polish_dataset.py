@@ -16,9 +16,12 @@ DASHONLY=re.compile(r"^[\-–—·•\*\s]{1,4}$")  # linia = sam myslnik/punkt/
 _PLLET="a-zA-Z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017b"
 LATIN2={"\u00b6":"\u015b","\u00b1":"\u0105","\u00b3":"\u0142","\u00bc":"\u017a","\u00bf":"\u017c"}  # Latin-2/CP1250 mojibake: ¶=ś ±=ą ³=ł ¼=ź ¿=ż
 MOJI=re.compile(r"(?<=["+_PLLET+r"])([\u00b6\u00b1\u00b3\u00bc\u00bf])(?=["+_PLLET+r"])")  # MID-WORD (litera-obie-strony) = zero-FP (odróżnia 'materia³' od legit 'm³'/'5±2')
-# heavily-garbled doc signal (FP-safe, high-precision): ± po malej-literze (=ą-mojibake, legit ± jest digit±digit)
-# LUB ¶/¹/¬ letter-adjacent (rzadko legit). NIE ³/¼/¿/£ (ambiguous: m³/¼/¿hiszp/£funt legit). Drop = FP-safe density (Mierniczy).
-GARBLED=re.compile(r"(?<=[a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c])\u00b1|(?<=[a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c])[\u00b6\u00b9\u00ac]|[\u00b6\u00b9\u00ac](?=[a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c])")
+# heavily-garbled doc signal (FP-safe): (a) ±-po-małej-literze (=ą-mojibake, legit ± jest digit±digit),
+# (b) ¶/¹/¬ letter-adjacent (rzadko legit), (c) ³/¼/¿ adjacent do INNEGO mojibake (_NB) = klaster-garbage
+# (np "å¼wirowa"/"ciê¿ko"; Mierniczy sub-klasa). NIE samotne ³/¼/¿/£ (m³/¼/¿hiszp/£funt) ani obce ää (Pääbo) = accept-gap.
+_LO="a-z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c"
+_NB="\u00b6\u00b1\u00b9\u00ac\u00a3\u00e5\u00e4\u00e6\u00ea\u00eb\u00f1\u00a1\u00af\u00a2"  # mojibake-neighbor (klaster-detekcja, NIE ³¼¿ same)
+GARBLED=re.compile(r"(?<=["+_LO+r"])\u00b1|(?<=["+_LO+r"])[\u00b6\u00b9\u00ac]|[\u00b6\u00b9\u00ac](?=["+_LO+r"])|(?<=["+_NB+r"])[\u00b3\u00bc\u00bf]|[\u00b3\u00bc\u00bf](?=["+_NB+r"])")
 # intra-word '?': lowercase-PL ? lowercase-PL, nie w URL (bez =,http,www,.php,.html w poblizu -> per-match check)
 QMID=re.compile(r"([a-ząćęłńóśźż])\?([a-ząćęłńóśźż])")
 URLish=re.compile(r"[=]|https?://|www\.|\.php|\.html|\.aspx")
