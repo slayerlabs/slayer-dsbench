@@ -25,6 +25,23 @@ GARBLED=re.compile(r"(?<=["+_LO+r"])\u00b1|(?<=["+_LO+r"])[\u00b6\u00b9\u00ac]|[
 # intra-word '?': lowercase-PL ? lowercase-PL, nie w URL (bez =,http,www,.php,.html w poblizu -> per-match check)
 QMID=re.compile(r"([a-ząćęłńóśźż])\?([a-ząćęłńóśźż])")
 URLish=re.compile(r"[=]|https?://|www\.|\.php|\.html|\.aspx")
+# UTF-8-double-encode mojibake (utf-8 bajty zdekodowane jako cp1252): "zwiÄ…zku"=związku (Mierniczy).
+# LOWERCASE-only (FP-safe: 2-char z continuation; bare Å/Ã legit szwedz/portug NIE ruszane).
+UTF8DE={"\u00c4\u2026":"\u0105","\u00c4\u2021":"\u0107","\u00c4\u2122":"\u0119","\u00c5\u201a":"\u0142","\u00c5\u201e":"\u0144","\u00c3\u00b3":"\u00f3","\u00c5\u203a":"\u015b","\u00c5\u00ba":"\u017a","\u00c5\u00bc":"\u017c"}
+UTF8DE_RE=re.compile("|".join(re.escape(k) for k in UTF8DE))
+# button/link-boilerplate leading-block (Arka 9_3_611/1977): blok link-przyciskow PRZED kontentem.
+BTN=re.compile(r"(?i)\b(kliknij|zaloguj|wypr[o\u00f3]buj|zobacz|zarejestruj|dowiedz|tutaj|wejd[z\u017a]|sprawd[z\u017a]|przeczytaj|odwied[z\u017a]|do[l\u0142][a\u0105]cz|czytaj|odkryj)\b")
+HDR=re.compile(r"(?i)^(spis tre[s\u015b]ci|ciek\w+ teksty|showing results|archive (for|of)|strony zwi[a\u0105]zane|kategorie?|menu|nawigacja|tagi|tags)\b")
+def _is_btn(l): n=len(BTN.findall(l)); return n>=3 or (" - " in l and n>=2)  # button-block-line (repeated-link struktura, NIE pojedyncze 'tutaj')
+def _is_hdr(l): s=l.strip(); return len(s)<50 and (bool(HDR.match(s)) or (s.endswith(":") and len(s.split())<=4))
+def strip_button_block(x):
+    """Strip leading boilerplate region (button-block + template-headery) do realnego kontentu.
+    FP-safe: region MUSI zawierac >=1 button-block-line; stop na realnym zdaniu (nie-boiler)."""
+    lines=x.split("\n"); i=0
+    while i<len(lines) and (_is_btn(lines[i]) or _is_hdr(lines[i])): i+=1
+    if i>0 and any(_is_btn(lines[j]) for j in range(i)):
+        return "\n".join(lines[i:]).lstrip("\n"), True
+    return x, False
 
 def strip_qmark(text):
     out=[]; n=0
@@ -50,7 +67,7 @@ def main():
         df.update({norm(l) for l in x.split("\n") if len(norm(l))>=3})
     thr=max(2,int(a.min_ratio*N)); hi={k for k,c in df.items() if c>=thr}
     # per-doc polish
-    strona_hits=qmark_hits=block_lines_removed=leadlist_hits=junk_hits=fffd_hits=latin2_hits=0; blocks_removed=0; sample_blocks=[]
+    strona_hits=qmark_hits=block_lines_removed=leadlist_hits=junk_hits=fffd_hits=latin2_hits=utf8de_hits=btn_hits=0; blocks_removed=0; sample_blocks=[]
     outtx=[]
     for x in tx:
         x2=x
@@ -58,6 +75,11 @@ def main():
         if any(c in x2 for c in LATIN2):
             x2n=MOJI.sub(lambda m: LATIN2[m.group(1)], x2)
             if x2n!=x2: x2=x2n; latin2_hits+=1  # Latin-2 mid-word mojibake remap (¶±³¼¿->śąłźż)
+        if "\u00c4" in x2 or "\u00c5" in x2 or "\u00c3\u00b3" in x2:
+            x2n=UTF8DE_RE.sub(lambda m: UTF8DE[m.group()], x2)
+            if x2n!=x2: x2=x2n; utf8de_hits+=1  # UTF-8-double-encode recovery (cp1252->utf-8, Mierniczy)
+        x2n,hit=strip_button_block(x2)
+        if hit: x2=x2n; btn_hits+=1  # leading button/link-block strip (Arka finding 9_3)
         m=STRONA.match(x2)
         if m: x2=x2[m.end():]; strona_hits+=1
         # leading-junk: strip startowe linie ktore sa samym myslnikiem/punktem (Arka '-\nJakby' -> 'Jakby')
@@ -100,6 +122,8 @@ def main():
     print(f"  leading-junk (bare-dash) strip: {junk_hits} docs")
     print(f"  U+FFFD (decode-junk) strip: {fffd_hits} docs")
     print(f"  Latin-2 mojibake remap (¶±³¼¿->śąłźż): {latin2_hits} docs")
+    print(f"  UTF-8-double-encode recovery (cp1252->utf-8): {utf8de_hits} docs")
+    print(f"  button/link-block leading strip (Arka 9_3): {btn_hits} docs")
     garbled=sum(1 for x in outtx if len(x)>=200 and GARBLED.search(x))
     print(f"  chars {ch0:,}->{ch1:,} ({100*(ch0-ch1)/ch0:.1f}%) | docs<200-po: {short} | heavily-garbled drop: {garbled}")
     print("  -- sample stripped-blocks (FP-check czy menu/nav) --")
