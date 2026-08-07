@@ -65,3 +65,8 @@
 
 ## Prowenancja findingów
 FCD-review Arka (Strona/?/button/truncation) · Wartownik QA (PII-residual/Latin-2/phone-leak/artifacts-check) · Mierniczy census (net-new-vs-baza/garbled-density/utf8/PESEL-example) · Latarnik safety (NATID-RODO-uniform/clearance-gate). PR #3 (pii+neardup+pipeline+artifacts), #4 (phone-labeled), #5 (button+utf8).
+
+## Powiązane (know-how graph — 3 komplementarne warstwy)
+- **Ten plik (`CLEANING.md`)** = warstwa OPERACYJNA (co robi kod, travels z `pipeline/`).
+- **`FCD-R4-Taksonomia-Odrzuceń`** (vault `60-Reference/`, Mierniczy) = warstwa METODOLOGICZNA (wielorazowa: sygnatury FP-safe, own-errors/pułapki „naive-zawyża/phantom-ref/sample-before-report"). Mapuje 1:1 na klasy powyżej.
+- **clearance-summary** (Latarnik, przy HF-push) = warstwa INSTANCJI (per-shard: dropped-cluster/kept-lone/base-duplicate provenance).
