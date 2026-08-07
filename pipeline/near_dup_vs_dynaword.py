@@ -10,7 +10,7 @@ Użycie:
   python near_dup_vs_dynaword.py --ref "data/wikipedia/*.parquet" --cand hplt.parquet --threshold 0.8
   --limit-ref N (sample ref dla feasibility) · --out kept.parquet (opcjonalnie zapis odsianych)
 """
-import re, time, glob, argparse, zlib
+import re, time, glob, argparse, zlib, hashlib
 import numpy as np
 import pyarrow as pa, pyarrow.parquet as pq
 
@@ -26,6 +26,11 @@ def shingles(text, k=5):
 
 def h31(s):
     return zlib.crc32(s.encode("utf-8")) & 0x7fffffff
+
+def pre(t, n=200):
+    """prefix-signature (Latarnik): md5 pierwszych-400-znakow -> norm-whitespace -> first-n -> lower.
+    Lapie truncation-variants (base=truncated-prefix cand) ktore Jaccard-MinHash gubi (low-J)."""
+    return hashlib.md5(re.sub(r"\s+", " ", (t or "")[:400]).strip().lower()[:n].encode("utf-8", "ignore")).hexdigest()
 
 def _perms(seed=1):
     rng = np.random.default_rng(seed)
@@ -74,6 +79,7 @@ def main():
     ap.add_argument("--limit-ref", type=int, default=0, help="cap sample referencji (feasibility)")
     ap.add_argument("--limit-cand", type=int, default=0)
     ap.add_argument("--out", default="", help="parquet odsianych kandydatów (opcjonalnie)")
+    ap.add_argument("--prefix-chars", type=int, default=0, help="prefix-sig dedup (Latarnik containment/truncation-lens): drop cand gdy prefix-sig w ref; 0=off, 200=zalecane")
     a = ap.parse_args()
     t0 = time.time()
     A, B = _perms(1)
@@ -82,6 +88,7 @@ def main():
     ref_sig = minhash(ref, A, B)
     idx = build_index(ref_sig)
     print(f"[{time.time()-t0:.0f}s] ref docs={len(ref)} zindeksowane", flush=True)
+    ref_pre = set(pre(t, a.prefix_chars) for t in ref) if a.prefix_chars else set()
 
     cand = load_texts([a.cand], a.limit_cand)
     cand_sig = minhash(cand, A, B)
@@ -102,7 +109,7 @@ def main():
                 best = jac
             if best >= a.threshold:
                 break
-        if best >= a.threshold:
+        if best >= a.threshold or (a.prefix_chars and pre(cand[c], a.prefix_chars) in ref_pre):
             keep_mask[c] = False
             dropped += 1
     kept = int(keep_mask.sum())
