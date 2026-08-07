@@ -15,6 +15,9 @@ from urllib.parse import urlparse
 import zstandard as zstd
 import pyarrow as pa, pyarrow.parquet as pq
 import tiktoken
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # local pipeline modules
+import phone_scrub
+from auto_clean_mangle import clean as _mangle_clean
 
 ADDED = "2026-07-14"
 SOURCE = "european_hplt_v3_pl"
@@ -101,7 +104,12 @@ def scrub_pii(text, spans, max_frac):
                 out = out[:a2] + PII_PLACEHOLDER + out[b2:]
             n_hplt = len(merged)
     # supplementary phone-scrub: HPLT-annotation-gap (FP-safe +-pattern), zawsze - takze gdy brak HPLT-spanow
-    out, n_phone = PHONE_RE.subn(PII_PLACEHOLDER, out)
+    # phone-scrub v12b: PHONE_RE (+48-intl, label-less) + label-window (labeled any-format, bounded-fixpoint) -> [Telefon]; + mangle-clean
+    out, n_phone = PHONE_RE.subn("[Telefon]", out)
+    for _ in range(8):
+        out, _k = phone_scrub.scrub_phones_labelwindow(out); n_phone += _k
+        if _k == 0: break
+    out, _ = _mangle_clean(out)
     # national-ID keyword-adjacent numer (PESEL/NIP/REGON/dowod) - RODO high-sensitivity, FP-safe (label+>=9digit)
     out, n_natid = NATID_RE.subn(lambda m: m.group(1) + m.group(2) + PII_PLACEHOLDER, out)
     return out, n_hplt + n_phone + n_natid, False
