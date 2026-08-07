@@ -1,4 +1,4 @@
-"""Skan PII: national-ID (PESEL/NIP/REGON/dowód)=błąd, email/telefon=ostrzeżenie. Tekst nested-aware + metadane.
+"""Skan PII: national-ID keyword-adjacent (PESEL/NIP/REGON/dowód)=błąd; gołe-11-PESEL/email/telefon=ostrzeżenie(surface). Tekst nested-aware + metadane.
 FAIL-LOUD: gdy formatka nie wyłuska tekstu, OSTRZEGA (nie udaje „czyste").
 
 national-ID (błąd) wykrywany DWUWARSTWOWO — precyzja + pokrycie, zmierzone FP-safe:
@@ -16,8 +16,9 @@ from ..textextract import texts, text_bases
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 PHONE = re.compile(r"(?<!\d)(?:\+48[\s-]?)?(?:\d[\s-]?){8}\d(?!\d)")
-# keyword-adjacent national-ID: etykieta + przylegający 9-13-cyfrowy numer (spacje/myślniki ok)
-NATID = re.compile(r"(?i)(PESEL|NIP|REGON|dow[o\u00f3]d\s+osobist\w*)([\s:.\-]{0,4}(?:nr\.?|numer)?[\s:.\-]{0,4})(\d[\d\s\-]{7,13}\d)")
+# keyword-adjacent national-ID: etykieta + (opcjonalny krótki łącznik nr/numer/to/wynosi/jest) + przylegający 9-13-cyfrowy numer.
+# Okno ograniczone (≤2 łączniki + interpunkcja) — łapie "PESEL to X" / "PESEL: numer X", FP-safe (number musi być blisko).
+NATID = re.compile(r"(?i)(?:PESEL|NIP|REGON|dow[o\u00f3]d\s+osobist\w*)[\s:.\-]*(?:(?:nr|numer|to|wynosi|jest)\.?[\s:.\-]*){0,2}(\d[\d\s\-]{7,13}\d)")
 # goły kandydat PESEL (11 cyfr) — walidowany checksumem+datą (patrz _pesel_valid), kasuje FP
 BARE11 = re.compile(r"(?<!\d)\d{11}(?!\d)")
 _W = (1, 3, 7, 9, 1, 3, 7, 9, 1, 3)
@@ -50,14 +51,16 @@ def run(ctx) -> list:
     out = []
     if ctx.records and tx == 0:
         out.append(Issue("error", "pii", "data", "text_fields nie wyłuskało tekstu — skan PII NIE wykonany (blokada; napraw formatkę)"))
-    n_id = n_natid + n_pesel
-    if n_id:
+    if n_natid:
         out.append(Issue("error", "pii", "data",
-                         f"national-ID wykryty: {n_id} (oznaczone PESEL/NIP/REGON/dowód: {n_natid}, gołe PESEL checksum-valid: {n_pesel}) — zredaguj przed publikacją"))
+                         f"national-ID keyword-adjacent (PESEL/NIP/REGON/dowód): {n_natid} — zredaguj przed publikacją (reliable-hard)"))
+    if n_pesel:
+        out.append(Issue("warn", "pii", "data",
+                         f"gole 11-cyfr PESEL-checksum-valid: {n_pesel} - SURFACE-for-clearance (FP-prone: legal-doc-ID typu WDU / przyklady-tutorialowe M-K; NIE hard-drop, tylko keyword-adjacent=blad)"))
     if n_email:
         out.append(Issue("warn", "pii", "data", f"emaile: {n_email} — rozważ redakcję"))
     if n_phone:
         out.append(Issue("warn", "pii", "data", f"potencjalne telefony: {n_phone}"))
-    if tx > 0 and not (n_id or n_email or n_phone):
+    if tx > 0 and not (n_natid or n_pesel or n_email or n_phone):
         out.append(Issue("info", "pii", "data", "PII czyste (tekst)"))
     return out

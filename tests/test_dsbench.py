@@ -71,11 +71,15 @@ def test_s3_determinizm():
     assert audit(c, V1).to_dict() == audit(c, V1).to_dict()
 
 
-def test_pii_pesel_failuje():
+def test_pii_bare11_pesel_surface_warn():
+    """Bare-11 PESEL-checksum-valid BEZ keyword → WARN/surface-for-clearance, NIE hard-error.
+    Policy (Latarnik-approved, 9_4-gate): bare-11-alone = FP-prone (legal-doc-ID/przykłady-tutorialowe),
+    tylko keyword-adjacent = błąd. Zapobiega spurious-FAIL na przykładach/FP przy skali."""
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sample.jsonl", '{"id":"a","text":"numer 44051401359 w zdaniu"}\n')
         rep = audit(_card(d), V1)
-        assert any(i.check == "pii" and i.level == "error" for i in rep.issues)
+        assert any(i.check == "pii" and i.level == "warn" and "PESEL" in i.msg for i in rep.issues), rep.to_markdown()
+        assert not any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
 
 def test_pii_NESTED_messages_failuje():
