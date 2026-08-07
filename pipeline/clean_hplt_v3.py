@@ -63,6 +63,10 @@ PII_PLACEHOLDER = "[PII]"
 # +-prefixed intl phone; FP-safe (0 trafien na prozie wolne_lektury), lapie HPLT-annotation-gap
 # na formatowanych stacjonarnych ("+48 (34) 365 19 17") ktore HPLT pii-spany gubia (zmierzone bin5)
 PHONE_RE = re.compile(r"\+\d[\d ()\-]{7,}\d")
+# keyword-adjacent phone: label (tel/telefon/kom/viber/whatsapp/fax/gsm/nr tel) + PRZYLEGAJACY 8-15 digit -> redact NUMER.
+# Lapie bare/non-+48 telefony ktore PHONE_RE (+48-anchored) minal (Wartownik-leaki: "Viber 8917..", "numer telefonu: 0773..").
+# FP-safe: label word-boundary (nie "hotel"/"komputer"/"telewizja"); bare-num BEZ label -> clearance-gate (nie scrub tu).
+PHONE_LABEL_RE = re.compile(r"(?i)\b(tel|telefon\w*|kom[o\u00f3]rk\w*|mobile|mob|viber|whatsapp|fax|faks|gsm|nr\s+tel\w*|numer\s+telefonu?)\b([\s:.\-]{0,6})(\+?\d[\d\s()\-]{6,13}\d)")
 # residual re-scan OUTPUT (co OCALALO po scrubie != pii_scrubbed=co usunieto); >0 = safety-FAIL (Wartownik)
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 # national-ID: keyword (PESEL/NIP/REGON/dowod) + PRZYLEGAJACY 9-13 digit -> redact NUMER (Wartownik-finding 8_2).
@@ -102,9 +106,11 @@ def scrub_pii(text, spans, max_frac):
             n_hplt = len(merged)
     # supplementary phone-scrub: HPLT-annotation-gap (FP-safe +-pattern), zawsze - takze gdy brak HPLT-spanow
     out, n_phone = PHONE_RE.subn(PII_PLACEHOLDER, out)
+    # keyword-adjacent phone (bare/non-+48 z labelem) - Wartownik materialized-leak, FP-safe (label+8-15digit)
+    out, n_phlabel = PHONE_LABEL_RE.subn(lambda m: m.group(1) + m.group(2) + PII_PLACEHOLDER, out)
     # national-ID keyword-adjacent numer (PESEL/NIP/REGON/dowod) - RODO high-sensitivity, FP-safe (label+>=9digit)
     out, n_natid = NATID_RE.subn(lambda m: m.group(1) + m.group(2) + PII_PLACEHOLDER, out)
-    return out, n_hplt + n_phone + n_natid, False
+    return out, n_hplt + n_phone + n_phlabel + n_natid, False
 
 def keep(o, min_chars, min_words, min_lang_prob, max_mt, dom_counts, max_per_domain):
     lang = o.get("lang")
@@ -230,7 +236,7 @@ def main():
                 rtop, _ = top_register(reg); regs[rtop] = regs.get(rtop, 0) + 1
                 mt_sum += float(reg.get("MT", 0.0)) if isinstance(reg, dict) else 0.0
                 tk = len(ENC.encode(text, disallowed_special=()))
-                resid_email += len(EMAIL_RE.findall(text)); resid_phone += len(PHONE_RE.findall(text)); resid_natid += len(NATID_RE.findall(text))
+                resid_email += len(EMAIL_RE.findall(text)); resid_phone += len(PHONE_RE.findall(text)) + len(PHONE_LABEL_RE.findall(text)); resid_natid += len(NATID_RE.findall(text))
                 ids.append(f"{out}_{kept}"); texts.append(text); tokens.append(tk)
                 kept += 1; chars += len(text); toks += tk
                 if len(ids) >= 1000:
