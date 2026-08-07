@@ -101,7 +101,7 @@ def scrub_pii(text, spans, max_frac):
                 out = out[:a2] + PII_PLACEHOLDER + out[b2:]
             n_hplt = len(merged)
     # supplementary phone-scrub: HPLT-annotation-gap (FP-safe +-pattern), zawsze - takze gdy brak HPLT-spanow
-    out, n_phone = PHONE_RE.subn(PII_PLACEHOLDER, out)
+    out, n_phone = PHONE_RE.subn("[Telefon]", out)  # v6 (Arek): spojny z v6-label-window; +48-intl recall (v6 lapie labeled-non-+48)
     # national-ID keyword-adjacent numer (PESEL/NIP/REGON/dowod) - RODO high-sensitivity, FP-safe (label+>=9digit)
     out, n_natid = NATID_RE.subn(lambda m: m.group(1) + m.group(2) + PII_PLACEHOLDER, out)
     return out, n_hplt + n_phone + n_natid, False
