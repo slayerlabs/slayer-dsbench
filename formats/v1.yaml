@@ -32,4 +32,4 @@ record_schema:
     source:      {type: str,  required: false}    # provenance per rekord (grupowanie licencji)
     license:     {type: str,  required: false}    # licencja PER DOKUMENT (SPDX); brak → parasol karty
 
-checks: [license, uniqueid, empty, pii, artifacts, dedup, decontam, stats, integrity]
+checks: [license, uniqueid, empty, pii, boilerplate, artifacts, dedup, decontam, stats, integrity]

@@ -394,6 +394,28 @@ def test_dynaword_sample_passes():
     assert not rep.by_level("warn"), rep.to_markdown()
 
 
+def test_boilerplate_hard_ostrzega():
+    """web-boilerplate HARD (linia 'Odpowiedz Usuń' = comment-cruft) → warn boilerplate/data."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"1","text":"To jest artykul o Warszawie i jej historii.\\nOdpowiedz Usun","license":"CC0-1.0"}\n'
+           '{"id":"2","text":"Zupelnie normalny tekst po polsku bez smieci.","license":"CC0-1.0"}\n')
+        rep = audit(_card(d), V1)
+        assert any(i.check == "boilerplate" and i.level == "warn" for i in rep.issues), rep.to_markdown()
+
+
+def test_boilerplate_proza_bez_fp():
+    """FP-safe: proza ze słowami markerów WEWNĄTRZ zdania (nie jako osobna linia) → BRAK warn.
+    Łapie regresję do naiwnego substring-matchu (który by tu FP-nął na 'dodaję komentarze')."""
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl",
+           '{"id":"1","text":"Subskrybuje te gazete od lat i dodaje komentarze do artykulow.","license":"CC0-1.0"}\n'
+           '{"id":"2","text":"Subskrybuj: W markecie budowlanym Obi kupilem nowe paski do przyczepy.","license":"CC0-1.0"}\n'
+           '{"id":"3","text":"Warszawa jest stolica Polski nad Wisla.","license":"CC0-1.0"}\n')
+        rep = audit(_card(d), V1)
+        assert not any(i.check == "boilerplate" and i.level == "warn" for i in rep.issues), rep.to_markdown()
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     ok = 0

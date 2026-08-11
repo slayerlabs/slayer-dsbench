@@ -44,10 +44,15 @@ def _classify(line: str) -> str | None:
         return None
     if n in HARD:
         return "hard"
-    # widget "Subskrybuj: Komentarze do posta (Atom)" — prefix + kontekst widgetu + KRÓTKI (widget label).
-    # FP-safe: proza "subskrybuję gazetę od lat" (brak kontekstu) i "Subskrybuj: <długi opis filmu>" (za długie) NIE łapane.
-    if len(n) < 60 and n.startswith("subskrybuj") and ("atom" in n or "komentarz" in n or n.startswith("subskrybuj:")):
-        return "hard"
+    # widget Blogger/CMS "Subskrybuj[:] komentarze|kanał|posty|(Atom)" — PO "subskrybuj" (i opcjonalnym
+    # dwukropku) MUSI iść obiekt-widgetu; sam label ("Subskrybuj:") też OK. Linia krótka (nie akapit).
+    # FP-safe: proza "Subskrybuję tę gazetę ... komentarze" i "Subskrybuj: W markecie <opis>" NIE łapane.
+    if n.startswith("subskrybuj") and len(n) < 130:
+        rest = n[len("subskrybuj"):]
+        if rest[:1] == ":":
+            rest = rest[1:]
+        if (not rest) or rest.startswith(("komentarz", "kanał", "kanal", "posty", "(atom")):
+            return "hard"
     if n in SOFT:
         return "soft"
     return None
