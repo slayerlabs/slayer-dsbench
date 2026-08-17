@@ -39,13 +39,18 @@ def independent_leak_scan(text):
             if re.search(r"0{6,}", d): continue            # sentinel/fake
             if _DATE.search(seg): continue                  # date-exclude (contamination-lekcja)
             if M._KRS.search(seg) or M._ISBN.search(seg): continue
-            # IBAN/account-context exclude (cluster>11 near account-kw)
+            # NRB/konto: cluster >=16 cyfr (26-cyfrowe NRB) — poza scope (D6), BEZ wymogu kw
+            # (lekcja 'internetowego.57 1020 1127...': kw 'konto' nie zawsze przed klastrem)
             gs = cm.end() + pm.start()
             cs = gs
             while cs > 0 and text[cs-1] in "0123456789 -": cs -= 1
             ce = cm.end() + pm.end()
             while ce < len(text) and text[ce] in "0123456789 -": ce += 1
-            if sum(c.isdigit() for c in text[cs:ce]) > 11 and M._ACCT.search(text[max(0,cs-30):cs]): continue
+            cluster_digits = sum(c.isdigit() for c in text[cs:ce])
+            if cluster_digits >= 16: continue                 # NRB/IBAN (D6: zostaje)
+            if cluster_digits > 11 and M._ACCT.search(text[max(0,cs-30):cs]): continue  # IBAN-context
+            # emergency (112/997/998/999) — publiczne, nie PII
+            if re.sub(r"\D", "", seg) in ("112", "997", "998", "999"): continue
             leaks.append((cm.group(), seg.strip(), text[max(0,gs-15):ce+5]))
     return leaks
 
