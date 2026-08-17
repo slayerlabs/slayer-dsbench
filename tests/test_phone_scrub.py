@@ -105,3 +105,23 @@ def test_nrb_near_label_kept():
               "kontakt: 1020 1127 0000 1402 0010 2475 nr rachunku"]:
         out, n = _fix(s)
         assert n == 0 and not _mangled(out), (s, out)
+
+
+def test_v14_foreign_and_ext_scrubbed():
+    # v14 (Wartownik): foreign-12-digit-structured (bez +) + landline+ext /26
+    for s in ["Fax: (49) 7561 91 32 09 biuro", "tel. (022) 208 28 28/26 czynne"]:
+        out, n = _fix(s)
+        assert n >= 1 and "[Telefon]" in out, (s, out)
+
+
+def test_v14_newline_wrapped_scrubbed():
+    # v14 \n-join: numer zawiniety przez pojedynczy \n (pre-\n <9 cyfr)
+    out, n = _fix("telefonu: 0845 302\n1444.")
+    assert n == 1 and "[Telefon]" in out, out
+
+
+def test_v14_currency_kept():
+    # v14 CURR-guard: liczba(9+cyfr)+waluta/jednostka = cena/miara, nie telefon -> KEEP
+    for s in ["kontakt cena 123 456 789 zl netto", "tel oferta 500 100 200 pln brutto"]:
+        out, n = _fix(s)
+        assert n == 0, (s, out)
