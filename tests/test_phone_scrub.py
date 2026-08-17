@@ -141,3 +141,19 @@ def test_v15_fp_kept():
               "tel godz 8 00 do 16 00 czynne", "Tel KRS: 0000245014 XIII"]:
         out, n = _fix(s)
         assert n == 0, (s, out)
+
+
+def test_v16_paren_newline_and_godz_scrubbed():
+    # v16 (Wartownik 8_5 re-run): \n w/po nawiasie + godz-CURR-FP (telefon przed godzinami)
+    for s in ["Numer telefonu: (56) 683\n70 67 biuro", "tel. (022)\n5979663 czynne",
+              "tel. 84 66 30 247 godz. 7.30-15.30"]:
+        out, n = _fix(s)
+        assert n >= 1 and "[Telefon]" in out, (s, out)
+
+
+def test_v16_no_mangle_coords_isbn_timestamp():
+    # v16 anti-mangle (digit-anchor): NIE scrubuj cyfr wewnatrz wspolrzednych/ISBN/timestamp przy tel-labelu
+    for s in ["wspolrzedne tel 52.1234567890 N szer", "ISBN tel. 9788301123456 ksiazka",
+              "czas kontakt 12.12.2024 14:30:00 start", "dane kontaktowe wsp 21.123456 51.98765"]:
+        out, n = _fix(s)
+        assert n == 0 and "[Telefon]" not in out, (s, out)

@@ -23,15 +23,16 @@ PHONE_LABEL = re.compile(
     r"(?i)\b(tel|telefon\w*|kom[oó]rk\w*|kom|kontakt\w*|zadzwo\w*|dzwo\w*|infolini\w*|gsm|fax\w*|faks\w*|nr\s*tel\w*|numer\s+tel\w*|telefonicznie)\b"  # v11: +dzwo\w* (dzwoń-family, Wartownik deep-verify recall-gap)
 )
 PHONE_NUM = re.compile(
-    # v15: opcjonalny foreign country-code w nawiasach "(0044)"/"( 847)"/"(+44)" (Wartownik 8_5 leak) PRZED zwyklym wzorcem
-    r"(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}"
+    # v15: opcjonalny foreign country-code w nawiasach "(0044)"/"( 847)"/"(+44)" PRZED zwyklym wzorcem
+    # v16: digit-anchor (?<![\d.]) / (?![\d.]) = nie zaczynaj/koncz w srodku ciagu cyfr (anty-mangle: wspolrzedne 21.123..., timestamp, ISBN)
+    r"(?<![\d.])(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}(?![\d.])"
 )
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")
 _ISBN = re.compile(r"\b97[89][\s\-]")
 _ADDR = re.compile(r"(?i)\b(ul\.|ulic\w*|adres\w*|kod\s+poczt\w*)")  # v8 (Monter): usunieto bare \d{2}-\d{3} (matchowal phone-internal '82-397' -> label-window-skip -> gubik leading-0-landline; 5-cyfr-postal <9 -> _is_phone odrzuca, wiec zbedny)
 _ACCT = re.compile(r"(?i)\b(konto|kont[ao]|rachun\w*|iban|nr\s+konta|nr\s+rachun\w*|bankverbindung|bic|swift)\b")  # v8-final (Wartownik verified-spec): account-SPECIFIC (BEZ bare-bank: banki maja telefony), number-anchored pre-30
-_CURR = re.compile(r"(?i)^\s{0,3}(z[lł]|pln|eur|usd|gbp|%|km|kg|szt|m2|m3|ton|godz|mln|mld)\b|^\s{0,2}[€$£]")  # v14: liczba+waluta/jednostka = cena/miara nie telefon (scrub_v38 spec)
+_CURR = re.compile(r"(?i)^\s{0,3}(z[lł]|pln|eur|usd|gbp|%)\b|^\s{0,2}[€$£]")  # v16: TYLKO waluta (usunieto godz/km/kg/szt/ton/mln - "godz" zjadalo telefon przed godzinami otwarcia, Wartownik)
 WINDOW = 75  # v15: 55->75 (Wartownik 8_5: numer 56-70 zn od labela / po newline+nazwisko przeciekał)
 PLACEHOLDER = "[Telefon]"  # v6 (Arek): semantic-tag NIE fake-number — fixed-fake poisonuje (model memoryzuje high-freq numer); tag = slot-koncept bez memoryzacji
 
@@ -98,8 +99,8 @@ def scrub_phones_labelwindow(text: str):
                     while b > a and text[b - 1].isspace():
                         b -= 1
                     spans.append((a, b))
-        # v14 \n-join: numer zawiniety przez pojedynczy \n (pre-\n <9 cyfr = niepelny -> bridge; pre>=9 = lista, zostaw)
-        for wm in re.finditer(r"(\d[\d \t\-]{0,18})\n([ \t]*\d[\d \t\-]{0,18}\d)", text[ws:ws + WINDOW + 20]):
+        # v14/v16 \n-join: numer zawiniety przez \n (pre-\n <9 cyfr = niepelny). v16: dopusc nawias "(56) 683\n70 67", "(022)\n5979663"
+        for wm in re.finditer(r"(\(?\d[\d \t\-()]{0,18})\n([ \t]*\d[\d \t\-()]{0,18}\d)", text[ws:ws + WINDOW + 20]):
             pre_d = sum(c.isdigit() for c in wm.group(1))
             tot_d = pre_d + sum(c.isdigit() for c in wm.group(2))
             if pre_d < 9 and 9 <= tot_d <= 11:
