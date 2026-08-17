@@ -97,3 +97,11 @@ def test_labeled_bare10_scrubbed():
     for s in ["Jej telefon: 9006121511", "numer tel 9006121511 do mnie", "kontakt 9006121511"]:
         out, n = _fix(s)
         assert n == 1 and "[Telefon]" in out, (s, out)
+
+
+def test_nrb_near_label_kept():
+    # v13.1 (Wartownik NRB-edge): 26-digit NRB near "kontaktu" label -> KEEP (>=16-digit cluster = account, nie telefon)
+    for s in ["kontaktu telefonicznego i internetowego.57 1020 1127 0000 1402 0010 2475",
+              "kontakt: 1020 1127 0000 1402 0010 2475 nr rachunku"]:
+        out, n = _fix(s)
+        assert n == 0 and not _mangled(out), (s, out)

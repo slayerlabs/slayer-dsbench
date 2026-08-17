@@ -66,8 +66,9 @@ def scrub_phones_labelwindow(text: str):
                 ce = b
                 while ce < len(text) and text[ce] in "0123456789 -":  # cluster-end
                     ce += 1
-                if sum(c.isdigit() for c in text[cs:ce]) > 11 and _ACCT.search(text[max(0, cs - 30):cs]):
-                    continue  # skip TYLKO long-cluster(IBAN>11) + account-kw; genuine-phone(<=11)+konto/rachunek-obok -> scrub (no over-skip-leak)
+                cluster_digits = sum(c.isdigit() for c in text[cs:ce])
+                if cluster_digits > 11 and (cluster_digits >= 16 or _ACCT.search(text[max(0, cs - 30):cs])):
+                    continue  # skip: (a) >11+account-kw (IBAN near konto/iban) LUB (b) >=16-cyfr cluster (NRB-26/karta-16 strukturalnie NIE telefon <=11; v13.1 Wartownik NRB-edge "kontaktu...57 1020 1127 0000..."). genuine-phone(<=11)+konto-obok -> scrub
                 while a < b and text[a].isspace():   # trim otaczające spacje (naturalność)
                     a += 1
                 while b > a and text[b - 1].isspace():
