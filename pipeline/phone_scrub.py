@@ -34,14 +34,16 @@ WINDOW = 55
 PLACEHOLDER = "[Telefon]"  # v6 (Arek): semantic-tag NIE fake-number — fixed-fake poisonuje (model memoryzuje high-freq numer); tag = slot-koncept bez memoryzacji
 
 def _is_phone(seg: str) -> bool:
-    """PL-phone plausibility: 9-11 cyfr; bare-digit-run (bez separatorów/+) MUSI być dokładnie 9
-    (10/11-cyfrowe bare = ID/timestamp/count, NIE PL-phone). Grouped/+48 = 9-11."""
+    """PL-phone plausibility: 9-11 cyfr. _is_phone jest WYLACZNIE label-anchored
+    (wolane tylko z scrub_phones_labelwindow po PHONE_LABEL) -> label = mocny dowod telefonu."""
     d = re.sub(r"\D", "", seg)
     if len(d) < 9 or len(d) > 11:
         return False
-    has_struct = bool(re.search(r"[\s\-/()]", seg.strip())) or seg.strip().startswith("+")
-    if not has_struct and not (len(d) == 9 or (len(d) == 10 and d.startswith("0")) or (len(d) == 11 and d.startswith(("48", "0")))):
-        return False  # v12b: bare-9 / bare-10-lead-0 / bare-11-'48'(+48-bez-plusa) / bare-11-'0'(UK-07/020 foreign RODO-scope); inne bare-10/11 = ID/ts reject
+    # v13 (Wartownik recall-gap "telefon: 9006121511" + RODO safe-superset): usunieto v12b bare-length
+    # sub-gate (bare-10-non-0/bare-11-non-48/0 -> reject). Byl anty-FP na labeled-count/timestamp, ale
+    # gubil labeled-bare-10 real-phone = RODO leak. Label-anchored: over-redact labeled-count = harmless,
+    # under-redact real-phone = leak -> akceptuj bare 9-11. Guardy nizej (6+zeros/DATE/KRS/ISBN) + cluster-
+    # account-guard (>11-digit+IBAN-kw w callerze) trzymaja date/KRS/ISBN/sentinel/IBAN.
     if re.search(r"0{6,}", d):
         return False  # sentinel/fake (6+ zeros) — idempotent + re-verify-safe
     if _KRS.search(seg) or _DATE.search(seg) or _ISBN.search(seg):

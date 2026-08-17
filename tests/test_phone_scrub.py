@@ -90,3 +90,10 @@ def test_fixpoint_convergent():
     out, _ = _fix("pod nr tel.: 12 345 67 89, 98 765 43 21, 77 45 11 928, 22 111 22 33")
     _, again = P.scrub_phones_labelwindow(out)
     assert again == 0, out
+
+
+def test_labeled_bare10_scrubbed():
+    # v13 (Wartownik recall-gap): labeled bare-10 non-leading-0 = real phone -> scrub (RODO safe-superset)
+    for s in ["Jej telefon: 9006121511", "numer tel 9006121511 do mnie", "kontakt 9006121511"]:
+        out, n = _fix(s)
+        assert n == 1 and "[Telefon]" in out, (s, out)
