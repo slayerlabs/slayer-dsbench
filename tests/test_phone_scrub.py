@@ -125,3 +125,19 @@ def test_v14_currency_kept():
     for s in ["kontakt cena 123 456 789 zl netto", "tel oferta 500 100 200 pln brutto"]:
         out, n = _fix(s)
         assert n == 0, (s, out)
+
+
+def test_v15_realleaks_scrubbed():
+    # v15 (Wartownik 8_5 719-leak): foreign-paren, +spacja, label-po-numerze, distance>55
+    for s in ["Telefon: (0044) 161 24 54 130 konsulat", "Prospect ( 847) 870 56 56 tel",
+              "Anna Raszewska (690 88 99 22) tel", "telefoniczny Kolodziejczak 728461533 lub"]:
+        out, n = _fix(s)
+        assert n >= 1 and "[Telefon]" in out, (s, out)
+
+
+def test_v15_fp_kept():
+    # v15 FP-guard: szersze okno/paren NIE lapie faktury/godzin/count przy tel-labelu
+    for s in ["faktura 4567 dnia tel biuro", "zamowienie 12345 sztuk tel dzial",
+              "tel godz 8 00 do 16 00 czynne", "Tel KRS: 0000245014 XIII"]:
+        out, n = _fix(s)
+        assert n == 0, (s, out)

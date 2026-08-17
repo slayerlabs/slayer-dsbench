@@ -23,7 +23,8 @@ PHONE_LABEL = re.compile(
     r"(?i)\b(tel|telefon\w*|kom[oó]rk\w*|kom|kontakt\w*|zadzwo\w*|dzwo\w*|infolini\w*|gsm|fax\w*|faks\w*|nr\s*tel\w*|numer\s+tel\w*|telefonicznie)\b"  # v11: +dzwo\w* (dzwoń-family, Wartownik deep-verify recall-gap)
 )
 PHONE_NUM = re.compile(
-    r"\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}"  # v12b (Wartownik): separatory [ \t\-] NIE \s (nie spanuj \n -> newline-adjacent-list caught osobno); interior \d{2,4}; +48/paren/leading-0
+    # v15: opcjonalny foreign country-code w nawiasach "(0044)"/"( 847)"/"(+44)" (Wartownik 8_5 leak) PRZED zwyklym wzorcem
+    r"(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}"
 )
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")
@@ -31,17 +32,17 @@ _ISBN = re.compile(r"\b97[89][\s\-]")
 _ADDR = re.compile(r"(?i)\b(ul\.|ulic\w*|adres\w*|kod\s+poczt\w*)")  # v8 (Monter): usunieto bare \d{2}-\d{3} (matchowal phone-internal '82-397' -> label-window-skip -> gubik leading-0-landline; 5-cyfr-postal <9 -> _is_phone odrzuca, wiec zbedny)
 _ACCT = re.compile(r"(?i)\b(konto|kont[ao]|rachun\w*|iban|nr\s+konta|nr\s+rachun\w*|bankverbindung|bic|swift)\b")  # v8-final (Wartownik verified-spec): account-SPECIFIC (BEZ bare-bank: banki maja telefony), number-anchored pre-30
 _CURR = re.compile(r"(?i)^\s{0,3}(z[lł]|pln|eur|usd|gbp|%|km|kg|szt|m2|m3|ton|godz|mln|mld)\b|^\s{0,2}[€$£]")  # v14: liczba+waluta/jednostka = cena/miara nie telefon (scrub_v38 spec)
-WINDOW = 55
+WINDOW = 75  # v15: 55->75 (Wartownik 8_5: numer 56-70 zn od labela / po newline+nazwisko przeciekał)
 PLACEHOLDER = "[Telefon]"  # v6 (Arek): semantic-tag NIE fake-number — fixed-fake poisonuje (model memoryzuje high-freq numer); tag = slot-koncept bez memoryzacji
 
 def _is_phone(seg: str) -> bool:
-    """PL/foreign-phone plausibility. _is_phone jest WYLACZNIE label-anchored
-    (wolane tylko z scrub_phones_labelwindow po PHONE_LABEL) -> label = mocny dowod telefonu."""
+    """PL/foreign-phone plausibility. WYLACZNIE label-anchored (po PHONE_LABEL) -> label = mocny dowod."""
     d = re.sub(r"\D", "", seg)
     has_struct = bool(re.search(r"[\s\-/()]", seg.strip())) or seg.strip().startswith("+")
+    core = d[2:] if d.startswith("00") else d  # v15: strip intl-prefix "00" (foreign "(0044) 161..." = 14 cyfr surowych, 12 znaczacych)
     # v14 (Wartownik foreign-12/ext): structured (separatory/+) do 13 cyfr (foreign country-code+national,
     # ext '/26'); bare (goly run) do 11 (bare-12/13 = ID). v13: bez bare-length sub-gate (RODO safe-superset).
-    if len(d) < 9 or len(d) > (13 if has_struct else 11):
+    if len(core) < 9 or len(core) > (13 if has_struct else 11):
         return False
     if re.search(r"0{6,}", d):
         return False  # sentinel/fake (6+ zeros) — idempotent + re-verify-safe
@@ -84,6 +85,19 @@ def scrub_phones_labelwindow(text: str):
                 while b > a and text[b - 1].isspace():
                     b -= 1
                 spans.append((a, b))
+        # v15 bidirectional: numer PRZED labelem ("(690 88 99 22) tel", "( 847) 870 56 56 tel")
+        pre_s = max(0, m.start() - WINDOW)
+        pcand = list(PHONE_NUM.finditer(text[pre_s:m.start()]))
+        if pcand:
+            nm = pcand[-1]  # najblizszy labela
+            if _is_phone(nm.group()):
+                a, b = pre_s + nm.start(), pre_s + nm.end()
+                if _passes_guards(text, a, b):
+                    while a < b and text[a].isspace():
+                        a += 1
+                    while b > a and text[b - 1].isspace():
+                        b -= 1
+                    spans.append((a, b))
         # v14 \n-join: numer zawiniety przez pojedynczy \n (pre-\n <9 cyfr = niepelny -> bridge; pre>=9 = lista, zostaw)
         for wm in re.finditer(r"(\d[\d \t\-]{0,18})\n([ \t]*\d[\d \t\-]{0,18}\d)", text[ws:ws + WINDOW + 20]):
             pre_d = sum(c.isdigit() for c in wm.group(1))

@@ -65,7 +65,7 @@ def top_register(reg):
 PII_PLACEHOLDER = "[PII]"
 # +-prefixed intl phone; FP-safe (0 trafien na prozie wolne_lektury), lapie HPLT-annotation-gap
 # na formatowanych stacjonarnych ("+48 (34) 365 19 17") ktore HPLT pii-spany gubia (zmierzone bin5)
-PHONE_RE = re.compile(r"\+\d[\d ()\-]{7,}\d")
+PHONE_RE = re.compile(r"\+[ ]?\d[\d ()\-]{7,}\d")  # v15: opcjonalna spacja po '+' (Wartownik "+ 380504611308")
 # residual re-scan OUTPUT (co OCALALO po scrubie != pii_scrubbed=co usunieto); >0 = safety-FAIL (Wartownik)
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 # national-ID: keyword (PESEL/NIP/REGON/dowod) + PRZYLEGAJACY 9-13 digit -> redact NUMER (Wartownik-finding 8_2).
@@ -176,6 +176,8 @@ def main():
     ap.add_argument("--max-records", type=int, default=0)
     ap.add_argument("--max-pii-frac", type=float, default=0.02,
                     help="drop-doc gdy PII-char-frakcja > prog (katalog kontaktowy); redakcja spanow zawsze")
+    ap.add_argument("--shard-mod", type=int, default=0, help="parallel: przetwarzaj tylko docs gdzie (raw_idx %% shard-mod)==shard-idx (0=off)")
+    ap.add_argument("--shard-idx", type=int, default=0, help="parallel worker index [0..shard-mod)")
     a = ap.parse_args()
     src = a.source; out = a.out_name or a.source
     outd = Path(a.out_dir); outd.mkdir(parents=True, exist_ok=True)
@@ -217,6 +219,8 @@ def main():
                 except Exception:
                     continue
                 read += 1
+                if a.shard_mod and (read - 1) % a.shard_mod != a.shard_idx:
+                    continue  # parallel: ten doc nalezy do innego workera
                 npii = 0
                 scrubbed, npii, pdrop = scrub_pii(o.get("text") or "", o.get("pii"), a.max_pii_frac)
                 if pdrop:
