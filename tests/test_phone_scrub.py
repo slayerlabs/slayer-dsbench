@@ -172,3 +172,22 @@ def test_v16_1_decimal_coord_kept():
     for s in ["wsp tel 52.1234567890 N", "geo kontakt 21.123456 51.98765"]:
         out, n = _fix(s)
         assert n == 0, (s, out)
+
+
+def test_v17_foreign_14digit_landline():
+    # v17 (Wartownik b125): niemiecki landline 14-cyfr structured -> scrub (maxlen 13->15)
+    out, n = _fix("tel. 03591/5251-68000 x")
+    assert n >= 1 and "[Telefon]" in out, out
+
+
+def test_v17_dual_slash_numbers():
+    # v17 (Wartownik b125): dwa numery sklejone '/' -> slash-split, oba scrubowane
+    out, n = _fix("tel. 56 641 4510/56 641 4376.")
+    assert n >= 1 and "[Telefon]" in out and "641" not in out, out
+
+
+def test_v17_foreign_no_new_mangle():
+    # v17 anti-mangle: maxlen 15 NIE lamie coord/NRB/ISBN (cluster-guard >=16 + digit-anchor + _ISBN)
+    for s in ["wsp 52.1234567890 N", "IBAN 61 1090 1014 0000 0712 1981 2874", "ISBN 9788301123456"]:
+        out, n = _fix(s)
+        assert n == 0 and not _mangled(out), (s, out)

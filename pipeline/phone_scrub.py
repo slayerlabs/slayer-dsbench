@@ -1,5 +1,5 @@
 """
-phone_scrub_labelwindow v4 — FP-validated extended phone-scrub (Latarnik, 2026-08-07).
+phone_scrub_labelwindow v17 — FP-validated extended phone-scrub (Latarnik, 2026-08-07; v17 2026-08-18).
 Label-block-window: scrub phone-format w oknie WINDOW po phone-labelu. Zamyka recall-gap
 (paren/compound/zadzwoń/infolinia/kontakt/dash-landline/2.-w-liście) BEZ over-scrub.
 
@@ -16,6 +16,14 @@ FP-validated (FCD-R3, 0-PRZED-gate): wolne_lektury=0; confounders (10-digit-coun
 address „Adres kontaktowy 80-339"/postal=KEEP; ISBN/KRS/DATE=KEEP. Recall: paren/compound/dash/2nd=SCRUB.
 IDEMPOTENT (pass2-additional=0 na 6_2 — bezpieczny multi-pass, ale i tak: aplikuj RAZ/regenerate).
 ⚠️ Invariant (Wartownik check≥scrub): residual-check MUSI używać TEJ funkcji.
+
+v17 (Wartownik b125, 2 realne scrub-missy na 8_6 — bez regresji 19->22 testow):
+ (1) foreign-14-struct: _is_phone structured maxlen 13->15 — niemiecki landline 14-cyfr
+     "tel. 03591/5251-68000" byl odrzucany (>13). Cluster-guard (>=16 LUB >13+account-kw)
+     NADAL blokuje NRB-26/karta-16/KRS -> zero nowych FP (coord/ISBN/NRB = n=0).
+ (2) slash-split dual: "tel. 56 641 4510/56 641 4376" = dwa numery sklejone '/'. PHONE_NUM
+     pod-lapuje span, a cluster-guard blokuje 18-cyfr blob. Fallback: rozszerz do pelnego runu,
+     potnij na '/', jesli KAZDA strona to plausible phone (9-13 struct) -> scrubuj caly span.
 """
 import re
 
@@ -43,9 +51,9 @@ def _is_phone(seg: str) -> bool:
     d = re.sub(r"\D", "", seg)
     has_struct = bool(re.search(r"[\s\-/()]", seg.strip())) or seg.strip().startswith("+")
     core = d[2:] if d.startswith("00") else d  # v15: strip intl-prefix "00" (foreign "(0044) 161..." = 14 cyfr surowych, 12 znaczacych)
-    # v14 (Wartownik foreign-12/ext): structured (separatory/+) do 13 cyfr (foreign country-code+national,
-    # ext '/26'); bare (goly run) do 11 (bare-12/13 = ID). v13: bez bare-length sub-gate (RODO safe-superset).
-    if len(core) < 9 or len(core) > (13 if has_struct else 11):
+    # v14 (Wartownik foreign-12/ext): structured (separatory/+) do 13 cyfr (foreign country-code+national, ext '/26'); bare (goly run) do 11 (bare-12/13 = ID). v13: bez bare-length sub-gate (RODO safe-superset).
+    # v17 (Wartownik b125): structured maxlen 13->15 — niemiecki landline 14-cyfr "03591/5251-68000" byl gubiony. Cluster-guard (>=16 LUB >13+account-kw) NADAL blokuje NRB-26/karta-16/KRS.
+    if len(core) < 9 or len(core) > (15 if has_struct else 11):
         return False
     if re.search(r"0{6,}", d):
         return False  # sentinel/fake (6+ zeros) — idempotent + re-verify-safe
@@ -79,15 +87,30 @@ def scrub_phones_labelwindow(text: str):
         ws = m.end()
         win = text[ws:ws + WINDOW]
         for nm in PHONE_NUM.finditer(win):
-            if _is_phone(nm.group()):
-                a, b = ws + nm.start(), ws + nm.end()
-                if not _passes_guards(text, a, b):
-                    continue
+            g = nm.group()
+            a, b = ws + nm.start(), ws + nm.end()
+            if _is_phone(g) and _passes_guards(text, a, b):
                 while a < b and text[a].isspace():   # trim otaczajace spacje
                     a += 1
                 while b > a and text[b - 1].isspace():
                     b -= 1
                 spans.append((a, b))
+                continue
+            # v17 (Wartownik b125) slash-split dual: "56 641 4510/56 641 4376" = dwa numery sklejone '/'.
+            # PHONE_NUM pod-lapuje (14/18 cyfr) i/lub cluster-guard blokuje 18-cyfr span -> normal-path pada.
+            # Rozszerz do pelnego runu [cyfry sep '/'], potnij na '/', jesli >=2 czesci i KAZDA to plausible
+            # phone (9-13 struct) -> scrubuj caly span. Cluster-guard pomijamy (per-czesc <=13); ACCT/CURR trzymamy.
+            if "/" in g:
+                rs, re_ = nm.start(), nm.end()
+                while re_ < len(win) and win[re_] in "0123456789 \t-/":
+                    re_ += 1
+                while re_ > rs and win[re_ - 1] in " \t-/":
+                    re_ -= 1
+                parts = [p.strip() for p in win[rs:re_].split("/") if p.strip()]
+                if len(parts) >= 2 and all(_is_phone(p) for p in parts):
+                    aa, bb = ws + rs, ws + re_
+                    if not _CURR.match(text[bb:bb + 6]) and not _ACCT.search(text[max(0, aa - 30):aa]):
+                        spans.append((aa, bb))
         # v15 bidirectional: numer PRZED labelem ("(690 88 99 22) tel", "( 847) 870 56 56 tel")
         pre_s = max(0, m.start() - WINDOW)
         pcand = list(PHONE_NUM.finditer(text[pre_s:m.start()]))
