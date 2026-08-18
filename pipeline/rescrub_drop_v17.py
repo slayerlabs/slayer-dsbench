@@ -12,6 +12,16 @@ import clean_hplt_v3 as C
 
 MANGLE = re.compile(r"\[Telefon\][-\d]|\d\[Telefon\]")
 
+# v20 quality-pass (Arek klepnal 12:01): inline-strip 3 wzorce, BEZ blanket-drop © (55k dobrych stopek)
+_Q_BYLINE = re.compile(r"©\s*℗?\s*Podpis:[^\n]*")   # agencyjny byline "© ℗Podpis: Imie Nazwisko" (PAP/DI, ~21k)
+_Q_BLOGGER = re.compile(r"OdpowiedzUsuń")            # Blogger-UI "Odpowiedz+Usun" sklejone (~140k)
+_Q_FRAME = re.compile(r"_{20,}")                     # ramki 20+ podkreslen (~12k)
+def quality_strip(x):
+    n = 0
+    for rx in (_Q_BYLINE, _Q_BLOGGER, _Q_FRAME):
+        x, k = rx.subn(" ", x); n += k
+    return x, n
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--parquet", required=True)
@@ -24,7 +34,7 @@ def main():
     schema = pf.schema_arrow
     out_path = os.path.join(a.outdir, os.path.basename(a.parquet)) if a.outdir else a.parquet
     writer = pq.ParquetWriter(out_path, schema, compression="zstd")
-    n_in = n_out = changed = dropped = 0
+    n_in = n_out = changed = dropped = qstripped = 0
     resid_e = resid_p = resid_n = 0
     for batch in pf.iter_batches(batch_size=a.batch):
         tbl = pa.Table.from_batches([batch], schema=schema)
@@ -32,7 +42,9 @@ def main():
         n_in += len(texts)
         new_text = []; keep = []
         for x in texts:
-            out, _, _ = C.scrub_pii(x or "", None, a.max_pii_frac)
+            xq, qn = quality_strip(x or "")
+            qstripped += qn
+            out, _, _ = C.scrub_pii(xq, None, a.max_pii_frac)
             if MANGLE.search(out):
                 keep.append(False); dropped += 1
                 continue
@@ -54,7 +66,7 @@ def main():
         n_out += len(new_text)
     writer.close()
     print(f"{os.path.basename(a.parquet)}: in={n_in:,} out={n_out:,} "
-          f"v17-changed={changed:,} dropped-mangle={dropped} "
+          f"v17-changed={changed:,} dropped-mangle={dropped} quality-stripped={qstripped:,} "
           f"resid(e/p/n)={resid_e}/{resid_p}/{resid_n} ({time.time()-t0:.0f}s)", flush=True)
 
 if __name__ == "__main__":
