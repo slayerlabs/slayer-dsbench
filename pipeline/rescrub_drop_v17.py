@@ -52,7 +52,13 @@ def main():
             writer.write_table(out_tbl)
         n_out += len(new_text)
     writer.close()
-    os.replace(tmp, a.parquet)
+    for attempt in range(6):  # Windows: os.replace pada [WinError 5] gdy plik chwilowo zablokowany (AV/indexer/inny reader) -> retry
+        try:
+            os.replace(tmp, a.parquet); break
+        except PermissionError:
+            if attempt == 5:
+                raise
+            time.sleep(2)
     print(f"{os.path.basename(a.parquet)}: in={n_in:,} out={n_out:,} "
           f"v17-changed={changed:,} dropped-mangle={dropped} "
           f"resid(e/p/n)={resid_e}/{resid_p}/{resid_n} ({time.time()-t0:.0f}s)", flush=True)
