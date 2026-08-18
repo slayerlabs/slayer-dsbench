@@ -17,12 +17,13 @@ def main():
     ap.add_argument("--parquet", required=True)
     ap.add_argument("--max-pii-frac", type=float, default=0.02)
     ap.add_argument("--batch", type=int, default=20000)
+    ap.add_argument("--outdir", default="", help="katalog wyjsciowy (nowy plik, ZERO in-place os.replace = brak Windows-lock). Pusty=in-place (ostrożnie).")
     a = ap.parse_args()
     t0 = time.time()
     pf = pq.ParquetFile(a.parquet)
     schema = pf.schema_arrow
-    tmp = a.parquet + ".v17tmp"
-    writer = pq.ParquetWriter(tmp, schema, compression="zstd")
+    out_path = os.path.join(a.outdir, os.path.basename(a.parquet)) if a.outdir else a.parquet
+    writer = pq.ParquetWriter(out_path, schema, compression="zstd")
     n_in = n_out = changed = dropped = 0
     resid_e = resid_p = resid_n = 0
     for batch in pf.iter_batches(batch_size=a.batch):
@@ -52,13 +53,6 @@ def main():
             writer.write_table(out_tbl)
         n_out += len(new_text)
     writer.close()
-    for attempt in range(6):  # Windows: os.replace pada [WinError 5] gdy plik chwilowo zablokowany (AV/indexer/inny reader) -> retry
-        try:
-            os.replace(tmp, a.parquet); break
-        except PermissionError:
-            if attempt == 5:
-                raise
-            time.sleep(2)
     print(f"{os.path.basename(a.parquet)}: in={n_in:,} out={n_out:,} "
           f"v17-changed={changed:,} dropped-mangle={dropped} "
           f"resid(e/p/n)={resid_e}/{resid_p}/{resid_n} ({time.time()-t0:.0f}s)", flush=True)
