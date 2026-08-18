@@ -68,8 +68,9 @@ def _multi_split(run: str) -> bool:
         parts = [p for p in re.split(pat, r) if re.sub(r"\D", "", p)]
         if len(parts) >= 2 and all(_is_phone(p) for p in parts):
             return True
-    # spacja-miedzy-numerami TYLKO gdy run ma telefon-punktuacje (-,/) — NRB/IBAN ma SAME spacje -> nie rusza (regresja-guard)
-    if re.search(r"[-/]", r):
+    # v19: spacja-miedzy-numerami gdy OBIE strony to valid phone I total<=22 cyfr (dwa telefony <=2x11).
+    # NRB-26/IBAN-28 total>22 -> wykluczone (regresja-guard bez wymogu -,/, bo Wartownik b2 = space-merge bez myslnika).
+    if sum(c.isdigit() for c in r) <= 22:
         for mm in re.finditer(r"\s+", r):
             if _is_phone(r[:mm.start()]) and _is_phone(r[mm.end():]):
                 return True
@@ -86,8 +87,8 @@ def _passes_guards(text, a, b):
     while ce < len(text) and text[ce] in "0123456789 -":  # cluster-end
         ce += 1
     cluster_digits = sum(c.isdigit() for c in text[cs:ce])
-    if cluster_digits > 13 and (cluster_digits >= 16 or _ACCT.search(text[max(0, cs - 30):cs])):
-        return False  # >=16-cyfr cluster (NRB-26/karta-16) LUB >13+account-kw (IBAN near konto) = NIE telefon
+    if cluster_digits > 13 and (cluster_digits >= 24 or _ACCT.search(text[max(0, cs - 30):cs])):
+        return False  # v19: >=24-cyfr cluster (NRB-26/IBAN-28) LUB >13+account-kw = NIE telefon. 16->24: dwa telefony obok (17-22cyfr, bez ACCT) NIE bloka (Wartownik b2 space-merge); karta-16/long-single lapie _is_phone (>15 struct/>11 bare)
     if _CURR.match(text[ce:ce + 6]):
         return False  # v14: liczba+waluta/jednostka (zl/PLN/EUR/%/km) = cena/miara nie telefon (scrub_v38 CURR-guard)
     return True

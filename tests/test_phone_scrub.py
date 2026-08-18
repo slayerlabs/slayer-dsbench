@@ -215,3 +215,22 @@ def test_v18_nrb_bare_spaces_kept_no_multisplit():
     # v18 regresja-guard: 26-cyfr NRB same-spacje przy labelu NIE moze byc multi-splitowany na telefony
     out, n = _fix("kontaktu telefonicznego i internetowego.57 1020 1127 0000 1402 0010 2475")
     assert n == 0, (out, n)
+
+
+def test_v19_space_merge_two_numbers():
+    # v19 (Wartownik b2): dwa numery rozdzielone SPACJA (bez -/) "750 52 82 0660399142" -> mobile scrub
+    # (cluster-guard 16->24: dwa telefony 17-22cyfr bez ACCT nie sa blokowane jak NRB)
+    out, n = _fix("tel/fax 750 52 82 0660399142 x")
+    assert n >= 1 and "0660399142" not in out, (out, n)
+
+
+def test_v19_nrb_still_kept_after_threshold_raise():
+    # v19 regresja: NRB-26 same-spacje przy labelu NADAL kept (cluster>=24 blokuje) mimo podniesienia progu
+    out, n = _fix("kontaktu telefonicznego i internetowego.57 1020 1127 0000 1402 0010 2475")
+    assert n == 0, (out, n)
+
+
+def test_v19_card16_kept():
+    # v19 regresja: karta-16 przy tel NIE scrub (cluster<24 ale _is_phone odrzuca 16>15 struct)
+    out, n = _fix("tel karta 1234 5678 9012 3456 platnosc")
+    assert n == 0, (out, n)
