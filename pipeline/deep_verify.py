@@ -22,7 +22,11 @@ def scrub_fix(x, cap=8):
 # INDEPENDENT lens (NIE pipeline-PHONE_NUM): broad phone-context + structured 9-11-run, date/IBAN/token-excl
 CTX = re.compile(r"(?i)\b(tel|telefon\w*|kom[oó]rk\w*|\bkom\b|kontakt\w*|zadzwo\w*|infolini\w*|gsm|fax\w*|faks\w*|dzwo\w*|zadzw\w*|nr\s*tel)\b")
 # real-phone-format: 9-11 digits with structure (spaces/dashes/parens), allow +48 / leading-0
-PHONE = re.compile(r"(?<!\d)(?:\+?48[\s\-]?)?(?:0[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?){2,4}\d{2,3}(?!\d)")
+# v20: separatory BEZ \n — realne numery nie łamią się w pół; \n-crossing dawał FP
+# (emergency-listy pionowe, username+data, archiwa lat, godziny otwarcia, pickery)
+# v20b: separator do 3 znaków [ \t\-] — łapie ' -42- ', '- ', ' - ' (stary lens łapał je
+# tylko PRZYPADKIEM przez \n-crossing); nadal bez \n
+PHONE = re.compile(r"(?<!\d)(?:\+?48[ \t\-]{0,2})?(?:0[ \t\-]{0,2})?(?:\(?\d{2,3}\)?[ \t\-]{0,3}){2,4}\d{2,3}(?!\d)")
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}|\b\d{1,2}[\s\-./](?:19|20)\d{2}\b")
 _TOKEN = re.compile(r"\[(?:Telefon|PII|Email|PESEL|NIP)\]")
 MANGLE = re.compile(r"\[Telefon\][-\d]|\d\[Telefon\]")
@@ -35,7 +39,10 @@ def independent_leak_scan(text):
         for pm in PHONE.finditer(win):
             seg = pm.group()
             d = re.sub(r"\D", "", seg)
-            if len(d) < 9 or len(d) > 11: continue
+            # v20: bare 9-14 (13-cyfr foreign '0773800XXXXXX'); ze strukturą 9-19
+            # (15-19 = merge dwóch numerów, klasa v19/v20: '004906187- 906330')
+            has_struct = bool(re.search(r"[ \t\-()]", seg.strip()))
+            if len(d) < 9 or len(d) > (19 if has_struct else 14): continue
             if re.search(r"0{6,}", d): continue            # sentinel/fake
             if _DATE.search(seg): continue                  # date-exclude (contamination-lekcja)
             if M._KRS.search(seg) or M._ISBN.search(seg): continue
@@ -46,18 +53,39 @@ def independent_leak_scan(text):
             while cs > 0 and text[cs-1] in "0123456789 -": cs -= 1
             ce = cm.end() + pm.end()
             while ce < len(text) and text[ce] in "0123456789 -": ce += 1
-            cluster_digits = sum(c.isdigit() for c in text[cs:ce])
+            cluster = text[cs:ce].strip(" -")
+            cluster_digits = sum(c.isdigit() for c in cluster)
             if cluster_digits >= 20: continue                 # NRB/IBAN (26-28 cyfr, D6: zostaje); 17-19 = dwa numery (kandydat)
             if cluster_digits > 11 and M._ACCT.search(text[max(0,cs-30):cs]): continue  # IBAN-context
             # emergency (112/997/998/999) — publiczne, nie PII
             if re.sub(r"\D", "", seg) in ("112", "997", "998", "999"): continue
-            # FP-exclude (v18, z triage b2 na pełnych): KRS-9/BDO-rejestr/IMEI/filename/wersja-jądra/fb-m.me URL
             seg_c = seg.strip()
             ctx45 = text[max(0,gs-45):ce+25]
-            if re.match(r"^\d{9}$", seg_c) and re.search(r"(?i)(KRS|BDO|IMEI|rejestr\w*|wersja|\.jpe?g|\.png|facebook|m\.me|www\.|http)", ctx45): continue
+            # v20: ds = pierwsza CYFRA klastra (walk konsumuje spacje/kreski — adjacency
+            # liczy się od cyfry, nie od cs: 'lub 00-33' to nie zlepek)
+            ds = cs
+            while ds < ce and not text[ds].isdigit(): ds += 1
+            # znak tuż przed cyframi = litera (ID zlepione: student1206, HU01-KA220-...)
+            # albo ']' po tokenie scruba (fragment konta po [PII]) — nie-telefon
+            if ds > 0 and (text[ds-1].isalpha() or (text[ds-1] == "]" and _TOKEN.search(text[max(0,ds-12):ds]))): continue
+            # v20: klaster doklejony kropką do łańcucha numerycznego x.y. (wersja/IP/build:
+            # '3.0.31-1211311') — nie-telefon; pojedyncza kropka po numerze ('82.0660399142') zostaje
+            if cs >= 2 and text[cs-1] == "." and re.search(r"\d\.\d+\.$", text[max(0,cs-12):cs]): continue
+            # v20: label-exclude dla BARE 9-15d (KRS/BDO/IMEI/SPID/rejestr/wersj*/polis*/ubezpiecz*/filename/URL)
+            if re.match(r"^\d{9,15}$", seg_c) and re.search(r"(?i)(KRS|BDO|IMEI|SPID|rejestr\w*|wersj\w*|polis\w*|ubezpiecz\w*|\.jpe?g|\.png|facebook|m\.me|www\.|http)", ctx45): continue
+            # v20: bare 12-14 tylko z labelem CTX tuż przed numerem ('telefonicznie 0773800XXXXXX' gap<=4);
+            # dalekie bare-długie = count/ID ('kontakt tylko takie tam 61541567415841')
+            if not has_struct and len(d) > 11 and (gs - cm.end()) > 4: continue
+            # v20: label KRS/SPID bezpośrednio przed klastrem (też formaty ze spacją: '00000 55578')
+            if re.search(r"(?i)\b(KRS|SPID\d?)\b[:\s]*$", text[max(0,cs-20):cs]): continue
+            # v20: bare 9-cyfrowe z zerem na przodzie = niepoprawny format PL (PL-9d zaczyna 1-9) — count/ID
+            if re.match(r"^0\d{8}$", seg_c) and not re.search(r"[\s\-/()]", cluster): continue
+            # v20: infolinie toll-free 800/0800/00800 — publiczne numery usługowe, nie PII osoby
+            if d.startswith(("800", "0800", "00800")) and len(d) <= 10: continue
             # v19: bare-seg = fragment dłuższej BARE-liczby (count/ID, np. 61541567415841) — FP;
             # liczby ze strukturą (spacje/kreski) zostają (realne, np. 'tel/fax 750 52 82 0660399142')
-            if not re.search(r"[\s\-/()]", seg_c) and not re.search(r"[\s\-/()]", text[cs:ce]) and cluster_digits > len(d):
+            # v20: cluster STRIPPED z brzegowych spacji — '  436000109472' liczy się jako bare
+            if not re.search(r"[\s\-/()]", seg_c) and not re.search(r"[\s\-/()]", cluster) and cluster_digits > len(d):
                 continue
             leaks.append((cm.group(), seg.strip(), text[max(0,gs-15):ce+5]))
     return leaks
