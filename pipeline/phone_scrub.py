@@ -24,8 +24,10 @@ PHONE_LABEL = re.compile(
 )
 PHONE_NUM = re.compile(
     # v15: opcjonalny foreign country-code w nawiasach "(0044)"/"( 847)"/"(+44)" PRZED zwyklym wzorcem
-    # v16: digit-anchor (?<![\d.]) / (?![\d.]) = nie zaczynaj/koncz w srodku ciagu cyfr (anty-mangle: wspolrzedne 21.123..., timestamp, ISBN)
-    r"(?<![\d.])(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}(?![\d.])"
+    # v16.1: digit-anchor rozroznia CYFRA.cyfra (decimal/coord -> blok) od LITERA.cyfra / .zdanie (telefon -> match).
+    #   start (?<!\d)(?<!\d\.) = nie po cyfrze i nie po "cyfra." ; end (?!\d)(?!\.\d) = nie przed cyfra i nie przed ".cyfra"
+    #   (v16 (?<![\d.]) blokowal WSZYSTKO po kropce -> gubione telefony "kontakt.601"/"tel 601...567." = 14208 leak, Wartownik)
+    r"(?<!\d)(?<!\d\.)(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}(?!\d)(?!\.\d)"
 )
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")

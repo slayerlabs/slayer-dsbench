@@ -157,3 +157,18 @@ def test_v16_no_mangle_coords_isbn_timestamp():
               "czas kontakt 12.12.2024 14:30:00 start", "dane kontaktowe wsp 21.123456 51.98765"]:
         out, n = _fix(s)
         assert n == 0 and "[Telefon]" not in out, (s, out)
+
+
+def test_v16_1_dot_adjacent_phone_scrubbed():
+    # v16.1 (Wartownik 14208-leak regresja): telefon po/przed kropka (zdanie/skrot) MUSI scrub;
+    # anchor rozroznia litera.cyfra (telefon) od cyfra.cyfra (decimal/coord)
+    for s in ["kontakt.601 234 567 x", "tel 601 234 567. Zadzwon jutro", "dane.tel 501 234 567 biuro"]:
+        out, n = _fix(s)
+        assert n >= 1 and "[Telefon]" in out, (s, out)
+
+
+def test_v16_1_decimal_coord_kept():
+    # v16.1: cyfra.cyfra (wspolrzedne/decimal) NIE scrub mimo tel-labela
+    for s in ["wsp tel 52.1234567890 N", "geo kontakt 21.123456 51.98765"]:
+        out, n = _fix(s)
+        assert n == 0, (s, out)
