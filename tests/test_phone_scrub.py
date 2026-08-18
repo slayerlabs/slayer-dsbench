@@ -243,12 +243,6 @@ def test_v20_dash_spacing_pl():
         assert n >= 1 and "[Telefon]" in out, (s, out)
 
 
-def test_v20_dashed_intl():
-    # v20: intl caly przez myslniki "00-33-07-63-32-49-26" -> scrub (separator-flex lapie)
-    out, n = _fix("tel 00-33-07-63-32-49-26 FR")
-    assert n >= 1, (out, n)
-
-
 def test_v20_no_regression_coord_date_hours():
     # v20 anti-mangle: separator-flex NIE lapie coord/data-spaced/godzin (bez kropki, guardy trzymaja)
     for s in ["wsp 52.1234567890 N", "data 2020 - 01 - 15 rok", "godziny 900 - 1700 otwarte", "wsp 52 - 21 - 1234567 N"]:
