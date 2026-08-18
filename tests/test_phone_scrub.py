@@ -234,3 +234,23 @@ def test_v19_card16_kept():
     # v19 regresja: karta-16 przy tel NIE scrub (cluster<24 ale _is_phone odrzuca 16>15 struct)
     out, n = _fix("tel karta 1234 5678 9012 3456 platnosc")
     assert n == 0, (out, n)
+
+
+def test_v20_dash_spacing_pl():
+    # v20 (Wartownik b2): spacja-wokol-myslnika "504 - 729 098", "81- 752-00-22" -> scrub (separator {0,3})
+    for s in ["obiadow tel 504 - 729 098 x", "tel 81- 752-00-22 biuro", "kontakt (25) 792 -42- 51 x"]:
+        out, n = _fix(s)
+        assert n >= 1 and "[Telefon]" in out, (s, out)
+
+
+def test_v20_dashed_intl():
+    # v20: intl caly przez myslniki "00-33-07-63-32-49-26" -> scrub (separator-flex lapie)
+    out, n = _fix("tel 00-33-07-63-32-49-26 FR")
+    assert n >= 1, (out, n)
+
+
+def test_v20_no_regression_coord_date_hours():
+    # v20 anti-mangle: separator-flex NIE lapie coord/data-spaced/godzin (bez kropki, guardy trzymaja)
+    for s in ["wsp 52.1234567890 N", "data 2020 - 01 - 15 rok", "godziny 900 - 1700 otwarte", "wsp 52 - 21 - 1234567 N"]:
+        out, n = _fix(s)
+        assert n == 0, (s, out)

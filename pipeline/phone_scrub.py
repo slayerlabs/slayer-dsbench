@@ -34,7 +34,8 @@ PHONE_NUM = re.compile(
     # v15: opcjonalny foreign country-code w nawiasach; v16.1: digit-anchor cyfra.cyfra(decimal->blok) vs litera.cyfra/.zdanie(telefon->match)
     # v18 (Wartownik b2): end-anchor (?!\.\d(?!\d?\.\d)) — pozwol konczyc numer PRZED data-kropkowa (91 449-55-23.13.01.2023
     #   = telefon+data, nie decimal), ale NADAL blokuj decimal/coord (52.1234567890). Roznica: data ma drugi kropka-segment (\d?\.\d).
-    r"(?<!\d)(?<!\d\.)(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}(?!\d)(?!\.\d(?!\d?\.\d))"
+    # v20 (Wartownik b2): separator miedzy-grup [ \t\-/]{0,3} (bylo ?=0-1) -> spacja-wokol-myslnika "504 - 729 098","81- 752","(25) 792 -42- 51". BEZ kropki (v16 coord-mangle risk). Dot/foreign-egzotyk/7-13cyfr -> DROP (A-prim).
+    r"(?<!\d)(?<!\d\.)(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]{0,3})?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]{0,3}){2,4}\d{2,4}(?!\d)(?!\.\d(?!\d?\.\d))"
 )
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")
