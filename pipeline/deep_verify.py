@@ -51,6 +51,10 @@ def independent_leak_scan(text):
             if cluster_digits > 11 and M._ACCT.search(text[max(0,cs-30):cs]): continue  # IBAN-context
             # emergency (112/997/998/999) — publiczne, nie PII
             if re.sub(r"\D", "", seg) in ("112", "997", "998", "999"): continue
+            # FP-exclude (v18, z triage b2 na pełnych): KRS-9/BDO-rejestr/IMEI/filename/wersja-jądra/fb-m.me URL
+            seg_c = seg.strip()
+            ctx45 = text[max(0,gs-45):ce+25]
+            if re.match(r"^\d{9}$", seg_c) and re.search(r"(?i)(KRS|BDO|IMEI|rejestr\w*|wersja|\.jpe?g|\.png|facebook|m\.me|www\.|http)", ctx45): continue
             leaks.append((cm.group(), seg.strip(), text[max(0,gs-15):ce+5]))
     return leaks
 
