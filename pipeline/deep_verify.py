@@ -47,7 +47,7 @@ def independent_leak_scan(text):
             ce = cm.end() + pm.end()
             while ce < len(text) and text[ce] in "0123456789 -": ce += 1
             cluster_digits = sum(c.isdigit() for c in text[cs:ce])
-            if cluster_digits >= 16: continue                 # NRB/IBAN (D6: zostaje)
+            if cluster_digits >= 20: continue                 # NRB/IBAN (26-28 cyfr, D6: zostaje); 17-19 = dwa numery (kandydat)
             if cluster_digits > 11 and M._ACCT.search(text[max(0,cs-30):cs]): continue  # IBAN-context
             # emergency (112/997/998/999) — publiczne, nie PII
             if re.sub(r"\D", "", seg) in ("112", "997", "998", "999"): continue
@@ -55,6 +55,10 @@ def independent_leak_scan(text):
             seg_c = seg.strip()
             ctx45 = text[max(0,gs-45):ce+25]
             if re.match(r"^\d{9}$", seg_c) and re.search(r"(?i)(KRS|BDO|IMEI|rejestr\w*|wersja|\.jpe?g|\.png|facebook|m\.me|www\.|http)", ctx45): continue
+            # v19: bare-seg = fragment dłuższej BARE-liczby (count/ID, np. 61541567415841) — FP;
+            # liczby ze strukturą (spacje/kreski) zostają (realne, np. 'tel/fax 750 52 82 0660399142')
+            if not re.search(r"[\s\-/()]", seg_c) and not re.search(r"[\s\-/()]", text[cs:ce]) and cluster_digits > len(d):
+                continue
             leaks.append((cm.group(), seg.strip(), text[max(0,gs-15):ce+5]))
     return leaks
 
