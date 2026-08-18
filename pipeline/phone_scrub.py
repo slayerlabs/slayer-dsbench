@@ -31,11 +31,10 @@ PHONE_LABEL = re.compile(
     r"(?i)\b(tel|telefon\w*|kom[oó]rk\w*|kom|kontakt\w*|zadzwo\w*|dzwo\w*|infolini\w*|gsm|fax\w*|faks\w*|nr\s*tel\w*|numer\s+tel\w*|telefonicznie)\b"  # v11: +dzwo\w* (dzwoń-family, Wartownik deep-verify recall-gap)
 )
 PHONE_NUM = re.compile(
-    # v15: opcjonalny foreign country-code w nawiasach "(0044)"/"( 847)"/"(+44)" PRZED zwyklym wzorcem
-    # v16.1: digit-anchor rozroznia CYFRA.cyfra (decimal/coord -> blok) od LITERA.cyfra / .zdanie (telefon -> match).
-    #   start (?<!\d)(?<!\d\.) = nie po cyfrze i nie po "cyfra." ; end (?!\d)(?!\.\d) = nie przed cyfra i nie przed ".cyfra"
-    #   (v16 (?<![\d.]) blokowal WSZYSTKO po kropce -> gubione telefony "kontakt.601"/"tel 601...567." = 14208 leak, Wartownik)
-    r"(?<!\d)(?<!\d\.)(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}(?!\d)(?!\.\d)"
+    # v15: opcjonalny foreign country-code w nawiasach; v16.1: digit-anchor cyfra.cyfra(decimal->blok) vs litera.cyfra/.zdanie(telefon->match)
+    # v18 (Wartownik b2): end-anchor (?!\.\d(?!\d?\.\d)) — pozwol konczyc numer PRZED data-kropkowa (91 449-55-23.13.01.2023
+    #   = telefon+data, nie decimal), ale NADAL blokuj decimal/coord (52.1234567890). Roznica: data ma drugi kropka-segment (\d?\.\d).
+    r"(?<!\d)(?<!\d\.)(?:\(\s?\+?0{0,2}\d{1,4}\s?\)[ \t\-]?)?\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}(?!\d)(?!\.\d(?!\d?\.\d))"
 )
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")
@@ -60,6 +59,21 @@ def _is_phone(seg: str) -> bool:
     if _KRS.search(seg) or _DATE.search(seg) or _ISBN.search(seg):
         return False
     return True
+
+def _multi_split(run: str) -> bool:
+    """v18 (Wartownik b2): True gdy run = >=2 telefony sklejone (each _is_phone). Rozroznia dwa-numery od NRB/konta.
+    Separatory: '(' po cyfrze (nowy numer w nawiasie "42(46)"), '/' (slash-sep), spacja-miedzy-numerami."""
+    r = run.strip()
+    for pat in (r"(?<=\d)\s*(?=\()", r"/"):  # nowy numer-w-nawiasie po cyfrze; slash miedzy numerami
+        parts = [p for p in re.split(pat, r) if re.sub(r"\D", "", p)]
+        if len(parts) >= 2 and all(_is_phone(p) for p in parts):
+            return True
+    # spacja-miedzy-numerami TYLKO gdy run ma telefon-punktuacje (-,/) — NRB/IBAN ma SAME spacje -> nie rusza (regresja-guard)
+    if re.search(r"[-/]", r):
+        for mm in re.finditer(r"\s+", r):
+            if _is_phone(r[:mm.start()]) and _is_phone(r[mm.end():]):
+                return True
+    return False
 
 def _passes_guards(text, a, b):
     """Cluster/CURR guardy wspolne dla normal + wrap-match. a,b = span numeru w text.
@@ -96,21 +110,20 @@ def scrub_phones_labelwindow(text: str):
                     b -= 1
                 spans.append((a, b))
                 continue
-            # v17 (Wartownik b125) slash-split dual: "56 641 4510/56 641 4376" = dwa numery sklejone '/'.
-            # PHONE_NUM pod-lapuje (14/18 cyfr) i/lub cluster-guard blokuje 18-cyfr span -> normal-path pada.
-            # Rozszerz do pelnego runu [cyfry sep '/'], potnij na '/', jesli >=2 czesci i KAZDA to plausible
-            # phone (9-13 struct) -> scrubuj caly span. Cluster-guard pomijamy (per-czesc <=13); ACCT/CURR trzymamy.
-            if "/" in g:
-                rs, re_ = nm.start(), nm.end()
-                while re_ < len(win) and win[re_] in "0123456789 \t-/":
-                    re_ += 1
-                while re_ > rs and win[re_ - 1] in " \t-/":
-                    re_ -= 1
-                parts = [p.strip() for p in win[rs:re_].split("/") if p.strip()]
-                if len(parts) >= 2 and all(_is_phone(p) for p in parts):
-                    aa, bb = ws + rs, ws + re_
-                    if not _CURR.match(text[bb:bb + 6]) and not _ACCT.search(text[max(0, aa - 30):aa]):
-                        spans.append((aa, bb))
+            # v17/v18 (Wartownik b125/b2) multi-number: >=2 telefony sklejone przez )( , / lub spacje-miedzy-numerami
+            # ("(46) 855 32 42(46) 855 38 13", "601-462-038 17/864-22-09", "56 641 4510/56 641 4376").
+            # PHONE_NUM laczy w dlugi span -> _is_phone(>15)/cluster-guard(>=16) pada. Rozszerz do pelnego runu,
+            # sprawdz czy = >=2 plausible phones (_multi_split) -> scrubuj caly span. Guardy ACCT/CURR trzymamy.
+            rs, re_ = nm.start(), nm.end()
+            while re_ < len(win) and win[re_] in "0123456789 \t-/()":
+                re_ += 1
+            while re_ > rs and win[re_ - 1] in " \t-/(":
+                re_ -= 1
+            run = win[rs:re_]
+            if _multi_split(run):
+                aa, bb = ws + rs, ws + re_
+                if not _CURR.match(text[bb:bb + 6]) and not _ACCT.search(text[max(0, aa - 30):aa]):
+                    spans.append((aa, bb))
         # v15 bidirectional: numer PRZED labelem ("(690 88 99 22) tel", "( 847) 870 56 56 tel")
         pre_s = max(0, m.start() - WINDOW)
         pcand = list(PHONE_NUM.finditer(text[pre_s:m.start()]))

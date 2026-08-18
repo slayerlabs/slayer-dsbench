@@ -191,3 +191,27 @@ def test_v17_foreign_no_new_mangle():
     for s in ["wsp 52.1234567890 N", "IBAN 61 1090 1014 0000 0712 1981 2874", "ISBN 9788301123456"]:
         out, n = _fix(s)
         assert n == 0 and not _mangled(out), (s, out)
+
+
+def test_v18_number_before_dotted_date():
+    # v18 (Wartownik b2): numer przed data-kropkowa "91 449-55-23.13.01.2023" = telefon+data -> scrub numer
+    out, n = _fix("telefon 91 449-55-23.13.01.2023 rok")
+    assert n >= 1 and "[Telefon]" in out and "449" not in out, (out, n)
+
+
+def test_v18_two_numbers_adjacent_parens():
+    # v18 (Wartownik b2): dwa numery w nawiasach obok "(46) 855 32 42(46) 855 38 13" -> oba scrub
+    out, n = _fix("Tel./fax: (46) 855 32 42(46) 855 38 13")
+    assert n >= 1 and "855" not in out, (out, n)
+
+
+def test_v18_two_numbers_space_slash():
+    # v18 (Wartownik b2): numer + spacja + drugi-ze-slashem "601-462-038 17/864-22-09" -> oba scrub
+    out, n = _fix("Tel: 601-462-038 17/864-22-09")
+    assert n >= 1 and "462" not in out and "864" not in out, (out, n)
+
+
+def test_v18_nrb_bare_spaces_kept_no_multisplit():
+    # v18 regresja-guard: 26-cyfr NRB same-spacje przy labelu NIE moze byc multi-splitowany na telefony
+    out, n = _fix("kontaktu telefonicznego i internetowego.57 1020 1127 0000 1402 0010 2475")
+    assert n == 0, (out, n)
