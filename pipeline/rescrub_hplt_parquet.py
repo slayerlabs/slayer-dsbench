@@ -47,6 +47,14 @@ def write_manifest(output_dir: Path, files: list[Path]) -> str:
     return hashlib.sha256(manifest.encode("utf-8")).hexdigest()
 
 
+
+def source_manifest(input_dir: Path) -> Path | None:
+    manifests = sorted(input_dir.glob(f"{MANIFEST_NAME}*"))
+    if len(manifests) > 1:
+        raise ValueError(f"ambiguous source manifests in {input_dir}: {manifests}")
+    return manifests[0] if manifests else None
+
+
 def rescrub(input_dir: Path, output_dir: Path, batch_size: int = 10_000) -> dict:
     input_dir = input_dir.resolve()
     output_dir = output_dir.resolve()
@@ -55,6 +63,8 @@ def rescrub(input_dir: Path, output_dir: Path, batch_size: int = 10_000) -> dict
     files = sorted(input_dir.glob("*.parquet"))
     if not files:
         raise FileNotFoundError(f"no Parquet files in {input_dir}")
+    input_manifest = source_manifest(input_dir)
+
 
     staging = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.staging-", dir=output_dir.parent))
     changed = documents = 0
@@ -86,7 +96,8 @@ def rescrub(input_dir: Path, output_dir: Path, batch_size: int = 10_000) -> dict
 
         manifest_sha256 = write_manifest(staging, outputs)
         summary = {
-            "source_manifest_sha256": sha256(input_dir / MANIFEST_NAME) if (input_dir / MANIFEST_NAME).is_file() else None,
+            "source_manifest": input_manifest.name if input_manifest else None,
+            "source_manifest_sha256": sha256(input_manifest) if input_manifest else None,
             "files": len(outputs),
             "documents": documents,
             "phone_or_mangle_replacements": changed,

@@ -41,6 +41,8 @@ def test_rescrub_creates_distinct_manifest_bound_artifact():
             "współrzędne 52.229676, 21.012228",
         ]
         assert result["files"] == 1
+        assert result["source_manifest"] == MANIFEST_NAME
+        assert result["source_manifest_sha256"]
         assert result["documents"] == 3
         assert result["phone_or_mangle_replacements"] == 2
         assert len((output / MANIFEST_NAME).read_text(encoding="utf-8").splitlines()) == 1
