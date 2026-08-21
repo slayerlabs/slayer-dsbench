@@ -53,6 +53,17 @@ def test_foreign_uk_bare_scrubbed():
         out, n = _fix(s)
         assert n == 1 and "[Telefon]" in out, (s, out)
 
+def test_v19_deep_verify_residual_classes_scrubbed():
+    cases = {
+        "nr telefonu: 56 45 10 310": "nr telefonu: [Telefon]",
+        "rem [Telefon], 577841006.": "rem [Telefon], [Telefon].",
+        "Tel + 2.812-787-2734": "Tel [Telefon]",
+        "telefonu: GOK – 83 3793057": "telefonu: GOK – [Telefon]",
+    }
+    for source, expected in cases.items():
+        out, n = _fix(source)
+        assert n == 1 and out == expected, (source, out)
+
 
 def test_newline_adjacent_list_both_scrubbed():
     # v12b: separatory [ \t\-] nie \s -> nie spanuje \n -> lista rozdzielona

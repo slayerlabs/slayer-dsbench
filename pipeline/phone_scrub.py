@@ -20,10 +20,10 @@ IDEMPOTENT (pass2-additional=0 na 6_2 — bezpieczny multi-pass, ale i tak: apli
 import re
 
 PHONE_LABEL = re.compile(
-    r"(?i)\b(tel|telefon\w*|kom[oó]rk\w*|kom|kontakt\w*|zadzwo\w*|dzwo\w*|infolini\w*|gsm|fax\w*|faks\w*|nr\s*tel\w*|numer\s+tel\w*|telefonicznie)\b"  # v11: +dzwo\w* (dzwoń-family, Wartownik deep-verify recall-gap)
+    r"(?i)(?:\b(tel|telefon\w*|kom[oó]rk\w*|kom|kontakt\w*|zadzwo\w*|dzwo\w*|infolini\w*|gsm|fax\w*|faks\w*|nr\s*tel\w*|numer\s+tel\w*|telefonicznie)\b|\[telefon\])"
 )
 PHONE_NUM = re.compile(
-    r"\(?(?:\+?[ \t]?48[ \t\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t\-/]?){2,4}\d{2,4}"  # v12b (Wartownik): separatory [ \t\-] NIE \s (nie spanuj \n -> newline-adjacent-list caught osobno); interior \d{2,4}; +48/paren/leading-0
+    r"(?:\+[ \t]?\d{1,3}[ \t.\-]?)?(?:0[ \t\-]?)?(?:\(?\d{2,4}\)?[ \t.\-/]?){2,4}\d{2,4}"
 )
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")
