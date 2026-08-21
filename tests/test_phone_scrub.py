@@ -64,6 +64,21 @@ def test_v19_deep_verify_residual_classes_scrubbed():
         out, n = _fix(source)
         assert n == 1 and out == expected, (source, out)
 
+def test_dot_separator_preserves_non_phone_values():
+    for source in [
+        "współrzędne 52.229676, 21.012228",
+        "data 14.03.2020",
+        "cena 1.299.00 zł",
+        "IP 192.168.100.254",
+        "wersja 12.10.2024",
+        "ISBN 978-83-1234-567-8",
+        "NRB 12 1020 5024 0000 3002 0135 5387",
+    ]:
+        out, n = _fix(source)
+        assert n == 0 and out == source, (source, out)
+    out, n = _fix("zadzwon 500100200. Cena 14.99 zł")
+    assert n == 1 and out == "zadzwon [Telefon]. Cena 14.99 zł", out
+
 
 def test_newline_adjacent_list_both_scrubbed():
     # v12b: separatory [ \t\-] nie \s -> nie spanuje \n -> lista rozdzielona
