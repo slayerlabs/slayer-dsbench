@@ -1,0 +1,32 @@
+# Formatka register — dataset HPLT otagowany rejestrami (wyjście klasyfikatora, Track 1/2).
+name: slayer-register-format
+version: 1
+text_fields: [text]
+id_field: document_id
+license_field: license
+source_field: source_id
+register_field: register
+garbage_field: garbage
+
+card_schema:
+  fields:
+    name:        {type: str, required: true}
+    version:     {type: str, required: true}
+    license:     {type: str, required: true}
+    visibility:  {type: str, required: true, enum: [internal, external, restricted]}
+    source_url:  {type: str, required: true}
+    sample:      {type: str, required: true}
+    classified_by: {type: str, required: false}
+
+record_schema:
+  fields:
+    document_id: {type: str, required: true}
+    source_id:   {type: str, required: false}
+    text:        {type: str, required: true}
+    register:    {type: str, required: true, enum: [news, howto, qa, dialog, literacki, nauka, encyklopedyczny, opinie, legal, web-inne]}
+    garbage:     {type: bool, required: false}
+    license:     {type: str, required: false}
+    provenance:  {type: str, required: false}
+    classified_by: {type: str, required: false}
+
+checks: [uniqueid, empty, register, decontam, stats]
