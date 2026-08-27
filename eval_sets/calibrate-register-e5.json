@@ -1,0 +1,66 @@
+{
+  "target": 0.9,
+  "model": "e5+logreg",
+  "per_register": {
+    "dialog": {
+      "tau": 0.44,
+      "precision": 1.0,
+      "coverage": 0.125,
+      "n_true": 32
+    },
+    "encyklopedyczny": {
+      "tau": 0.4,
+      "precision": 1.0,
+      "coverage": 0.053,
+      "n_true": 19
+    },
+    "howto": {
+      "tau": 0.4,
+      "precision": 0.941,
+      "coverage": 0.667,
+      "n_true": 48
+    },
+    "legal": {
+      "tau": 0.4,
+      "precision": 1.0,
+      "coverage": 0.2,
+      "n_true": 10
+    },
+    "literacki": {
+      "tau": 0.5,
+      "precision": 1.0,
+      "coverage": 0.188,
+      "n_true": 32
+    },
+    "nauka": {
+      "tau": 0.58,
+      "precision": 1.0,
+      "coverage": 0.085,
+      "n_true": 47
+    },
+    "news": {
+      "tau": 0.3,
+      "precision": 0.96,
+      "coverage": 0.834,
+      "n_true": 229
+    },
+    "opinie": {
+      "tau": 0.42,
+      "precision": 0.909,
+      "coverage": 0.253,
+      "n_true": 79
+    },
+    "qa": {
+      "tau": 0.3,
+      "precision": 0.903,
+      "coverage": 0.7,
+      "n_true": 40
+    },
+    "web-inne": {
+      "tau": 0.44,
+      "precision": 0.929,
+      "coverage": 0.333,
+      "n_true": 39
+    }
+  }
+}
