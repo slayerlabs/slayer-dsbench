@@ -7,7 +7,7 @@ from ..models import Issue
 from ..registry import check
 
 KNOWN = {"news", "howto", "qa", "dialog", "literacki", "nauka",
-         "encyklopedyczny", "opinie", "legal", "web-inne"}
+         "encyklopedyczny", "opinie", "legal", "web-inne", "info"}
 GATE = {"dialog", "qa", "howto", "nauka", "literacki"}  # bramkowane do mixu jako diverse
 
 

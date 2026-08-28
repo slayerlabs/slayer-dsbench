@@ -23,7 +23,7 @@ record_schema:
     document_id: {type: str, required: true}
     source_id:   {type: str, required: false}
     text:        {type: str, required: true}
-    register:    {type: str, required: true, enum: [news, howto, qa, dialog, literacki, nauka, encyklopedyczny, opinie, legal, web-inne]}
+    register:    {type: str, required: true, enum: [news, howto, qa, dialog, literacki, nauka, encyklopedyczny, opinie, legal, web-inne, info]}
     garbage:     {type: bool, required: false}
     license:     {type: str, required: false}
     provenance:  {type: str, required: false}
