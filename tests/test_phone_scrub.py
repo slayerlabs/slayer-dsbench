@@ -248,3 +248,19 @@ def test_v20_no_regression_coord_date_hours():
     for s in ["wsp 52.1234567890 N", "data 2020 - 01 - 15 rok", "godziny 900 - 1700 otwarte", "wsp 52 - 21 - 1234567 N"]:
         out, n = _fix(s)
         assert n == 0, (s, out)
+
+
+def test_dot_separator_preserves_non_phone_values():
+    for source in [
+        "współrzędne 52.229676, 21.012228",
+        "data 14.03.2020",
+        "cena 1.299.00 zł",
+        "IP 192.168.100.254",
+        "wersja 12.10.2024",
+        "ISBN 978-83-1234-567-8",
+        "NRB 12 1020 5024 0000 3002 0135 5387",
+    ]:
+        out, n = _fix(source)
+        assert n == 0 and out == source, (source, out)
+    out, n = _fix("zadzwon 500100200. Cena 14.99 zł")
+    assert n == 1 and out == "zadzwon [Telefon]. Cena 14.99 zł", out
