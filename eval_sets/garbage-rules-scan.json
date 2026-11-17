@@ -1,0 +1,16 @@
+{
+  "N": 200000,
+  "quarantine_pct": 0.242,
+  "per_rule": {
+    "job_listing_boiler": 10,
+    "dating_profile": 41,
+    "oldman_synonym_spam": 38,
+    "seo_catalog": 431
+  },
+  "strip_per_rule": {
+    "read_more": 3023,
+    "forum_online_nav": 76
+  },
+  "silver_rule_q": 17,
+  "silver_auto_garbage": 21
+}
