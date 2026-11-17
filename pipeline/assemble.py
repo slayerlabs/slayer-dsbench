@@ -4,9 +4,10 @@
 aktualizacja dataset.json. Idempotentne: pomija istniejace pliki wyjsciowe (restart-safe)."""
 import glob, os, json, hashlib, time
 import pyarrow as pa, pyarrow.parquet as pq
+from paths import data_root
 
-DS = "/mnt/c/Projekty/datasets/slayer-pl-8x3b"
-BUILD = "/mnt/c/Projekty/datasets/build"
+DS = str(data_root() / "slayer-pl-8x3b")
+BUILD = str(data_root() / "build")
 WEB = f"{BUILD}/web"
 SHARED = f"{DS}/shared"
 os.makedirs(SHARED, exist_ok=True)

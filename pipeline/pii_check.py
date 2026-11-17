@@ -3,8 +3,9 @@
 zrodla ([PII],[Telefon]). Nie blokuje (karta: audyt PII po stronie odbiorcy) - raportuje skale."""
 import glob, re, json
 import pyarrow.parquet as pq
+from paths import data_root
 
-DS = "/mnt/c/Projekty/datasets/slayer-pl-8x3b"
+DS = str(data_root() / "slayer-pl-8x3b")
 EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 PHONE = re.compile(r"(?<!\d)(?:\+48\s?)?(?:\d[ -]?){9}(?!\d)")
 PESEL = re.compile(r"(?<!\d)\d{11}(?!\d)")

@@ -7,12 +7,13 @@ import sys, json, numpy as np, pyarrow.parquet as pq, pyarrow as pa
 from collections import Counter
 from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
+from paths import DATASETS, EVAL_SETS, data_root
 
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
-SILVER = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
-CALIB = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/calibrate-register-e5.json"
-SLICE = "/mnt/c/Projekty/datasets/build/web/web-slice-0.parquet"
-OUTDIR = "/mnt/c/Projekty/Slayer/slayer-dsbench/datasets/hplt-registers-pilot"
+SILVER = EVAL_SETS / "hplt-register-silver-v1.jsonl"
+CALIB = EVAL_SETS / "calibrate-register-e5.json"
+SLICE = str(data_root() / "build/web/web-slice-0.parquet")
+OUTDIR = DATASETS / "hplt-registers-pilot"
 MODEL = "intfloat/multilingual-e5-base"; MIN_N = 8
 
 rows = [json.loads(l) for l in open(SILVER, encoding="utf-8") if l.strip()]
@@ -64,6 +65,6 @@ with open(f"{OUTDIR}/sample.jsonl", "w", encoding="utf-8") as f:
     for r in recs[:2000]: f.write(json.dumps(r, ensure_ascii=False) + "\n")  # sample dla dsbench karty
 json.dump({"N": len(texts), "n_clean": n_clean, "clean_pct": round(100*n_clean/len(texts),1),
            "dist_clean": dict(dist_clean), "tau": {k: round(v,2) for k,v in tau.items()}},
-          open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/pilot-tag-slice0.json","w",encoding="utf-8"),
+          open(EVAL_SETS / "pilot-tag-slice0.json","w",encoding="utf-8"),
           ensure_ascii=False, indent=2)
 print(f"\nzapis: {OUTDIR}/sample.jsonl (2k dla karty) + eval_sets/pilot-tag-slice0.json")

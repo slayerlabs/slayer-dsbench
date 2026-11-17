@@ -8,7 +8,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import f1_score, precision_recall_fscore_support, classification_report
 
-PATH = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
+from paths import EVAL_SETS
+
+PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 URL = "http://127.0.0.1:1234/v1/embeddings"
 MODEL = "text-embedding-nomic-embed-text-v1.5"
 GATE = {"dialog","qa","howto","nauka","literacki"}
@@ -57,6 +59,6 @@ json.dump({"model":"nomic-embed+logreg","n_used":len(y),"macro_f1_pooled":round(
            "macro_f1_cv":round(mm,4),"ci95":round(ci,4),"baseline_tfidf":0.388,
            "per_register":{l:{"precision":round(float(p),4),"recall":round(float(r),4),"n":int(s)}
                            for l,p,r,s in zip(labs,P,R,S)}},
-          open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/embed-register-nomic.json","w",encoding="utf-8"),
+          open(EVAL_SETS / "embed-register-nomic.json","w",encoding="utf-8"),
           ensure_ascii=False, indent=2)
 print("zapis -> eval_sets/embed-register-nomic.json")

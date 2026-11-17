@@ -2,8 +2,8 @@
 """Generuje partie human-review (active-learning). Skala POLSKA: zostaw/wytnij/usuń. Nazwy regul po polsku.
 Uzycie: python gen_review_batch.py <numer> [K_usun K_wytnij K_losowe]"""
 import sys, json, random, pyarrow.parquet as pq
-sys.path.insert(0, "/mnt/c/Projekty/Slayer/slayer-dsbench/pipeline")
 from garbage_rules import detect
+from paths import EVAL_SETS, data_root, notes_dir
 
 # angielskie klucze reguł -> polskie nazwy do wyświetlenia
 PL = {
@@ -18,7 +18,7 @@ def plname(r):  # r bywa "teaser_listing(read_more×5)" -> zachowaj licznik
 
 BATCH = sys.argv[1] if len(sys.argv) > 1 else "03"
 KU, KW, KL = (int(x) for x in (sys.argv[2:5] or [15, 5, 10]))
-SLICE = "/mnt/c/Projekty/datasets/build/web/web-slice-0.parquet"
+SLICE = str(data_root() / "build/web/web-slice-0.parquet")
 random.seed(int(BATCH) + 100)
 
 pf = pq.ParquetFile(SLICE)
@@ -49,8 +49,8 @@ for i, (did, txt, flag) in enumerate(picked, 1):
     md.append("werdykt: ______")
     md.append("")
     recs.append({"id": did, "podejrzenie": flag, "text": txt, "werdykt": ""})
-mdp = f"/mnt/c/Projekty/private/labvault-local/01_ArekSłota/28_08_Klasyfikator-Rejestrow-HPLT/45-Eksperymenty/human-review-partia-{BATCH}.md"
-jlp = f"/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/human-review-partia-{BATCH}.jsonl"
+mdp = notes_dir() / f"human-review-partia-{BATCH}.md"
+jlp = EVAL_SETS / f"human-review-partia-{BATCH}.jsonl"
 open(mdp,"w",encoding="utf-8").write("\n".join(md))
 open(jlp,"w",encoding="utf-8").write("\n".join(json.dumps(r,ensure_ascii=False) for r in recs))
 nt = sum(1 for _,_,f in picked if "strona-zajawki" in f)

@@ -9,7 +9,9 @@ from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
-PATH = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
+from paths import EVAL_SETS
+
+PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 MODEL = "intfloat/multilingual-e5-base"
 TARGET = 0.90
 GATE = {"dialog","qa","howto","nauka","literacki"}; MIN_N = 8
@@ -58,7 +60,7 @@ for c in classes:
         print(f"{c:16}  --   nieosiagalne przy tym n   n_true={truec.sum():4}  ({base_p:.2f}/{base_r:.2f}){g}")
         out[c] = {"tau":None,"reachable":False,"base_precision":round(float(base_p),3),"n_true":int(truec.sum())}
 json.dump({"target":TARGET,"model":"e5+logreg","per_register":out},
-          open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/calibrate-register-e5.json","w",encoding="utf-8"),
+          open(EVAL_SETS / "calibrate-register-e5.json","w",encoding="utf-8"),
           ensure_ascii=False, indent=2)
 gate_ok = [c for c in GATE if out.get(c,{}).get("tau") is not None]
 print(f"\nGATE osiagalne precision>={TARGET}: {gate_ok} / {sorted(GATE)}")

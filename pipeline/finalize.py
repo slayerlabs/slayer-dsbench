@@ -4,9 +4,10 @@ aktualizacja dataset.json. Uruchamiane po assemble.py (wszystkie parquet istniej
 import glob, os, json, hashlib, time
 from collections import Counter
 import pyarrow.parquet as pq
+from paths import data_root
 
-DS = "/mnt/c/Projekty/datasets/slayer-pl-8x3b"
-BUILD = "/mnt/c/Projekty/datasets/build"
+DS = str(data_root() / "slayer-pl-8x3b")
+BUILD = str(data_root() / "build")
 SHARED = f"{DS}/shared"
 WS = json.load(open(f"{BUILD}/web-backbone-stats.json"))
 SLICE_TOK, SLICE_DOCS = WS["slice_tok"], WS["slice_docs"]

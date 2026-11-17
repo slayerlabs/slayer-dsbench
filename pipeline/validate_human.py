@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """Walidacja AT1.1: e5-klasyfikator (train na silver) vs auto-labeler vs HUMAN-gold (batch-04, 30 doc).
-Rozstrzyga czy klasyfikator jest realnie dobry czy powiela auto-labeler."""
-import json, numpy as np
+Rozstrzyga czy klasyfikator jest realnie dobry czy powiela auto-labeler.
+Uzycie: python validate_human.py <porownanie.json>  (lista rekordow z polami text, human, opus)"""
+import sys, json, numpy as np
 from collections import Counter
 from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
 
-SILVER="/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
-CMP="/mnt/c/tmp/batch04_compare.json"
+from paths import EVAL_SETS
+
+SILVER = EVAL_SETS / "hplt-register-silver-v1.jsonl"
+if len(sys.argv) < 2:
+    raise SystemExit(__doc__.strip().splitlines()[-1])
+CMP = sys.argv[1]
 MODEL="intfloat/multilingual-e5-base"; MIN_N=8
 
 sv=[json.loads(l) for l in open(SILVER,encoding="utf-8") if l.strip()]

@@ -9,7 +9,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import f1_score, precision_recall_fscore_support, classification_report
 
-PATH = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
+from paths import EVAL_SETS
+
+PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 MODEL = "intfloat/multilingual-e5-base"
 GATE = {"dialog","qa","howto","nauka","literacki"}; MIN_N = 8
 
@@ -48,6 +50,6 @@ json.dump({"model":"multilingual-e5-base+logreg","n_used":len(y),"macro_f1_poole
            "verdict":verdict,
            "per_register":{l:{"precision":round(float(p),4),"recall":round(float(r),4),"n":int(s)}
                            for l,p,r,s in zip(labs,P,R,S)}},
-          open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/embed-register-e5.json","w",encoding="utf-8"),
+          open(EVAL_SETS / "embed-register-e5.json","w",encoding="utf-8"),
           ensure_ascii=False, indent=2)
 print("zapis -> eval_sets/embed-register-e5.json")

@@ -3,15 +3,14 @@
 Per-slice checkpoint: web-slice-{i}.tagged.parquet; pomija juz zrobione (restart-safe).
 Memory-bounded: iter_batches, embed batchami, ParquetWriter w finally.
 Slice'y 0-7 (8 packow); 8-9 rezerwa (nietagowane)."""
-import sys, os, json, re, time, numpy as np
+import os, json, re, time, numpy as np
 import pyarrow as pa, pyarrow.parquet as pq
-sys.path.insert(0, "/mnt/c/Projekty/Slayer/slayer-dsbench/pipeline")
 from garbage_rules import detect
 import e5_gpu
+from paths import EVAL_SETS as ES, data_root
 
-WEB = "/mnt/c/Projekty/datasets/build/web"
-ES = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets"
-Z = np.load(f"{ES}/logreg_coef.npz", allow_pickle=True)
+WEB = str(data_root() / "build/web")
+Z = np.load(ES / "logreg_coef.npz", allow_pickle=False)
 COEF, INTER, CLASSES = Z["coef"], Z["intercept"], Z["classes"].astype(str)
 
 STRIP_RX = [

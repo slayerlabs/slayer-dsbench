@@ -5,10 +5,11 @@
 import os, re, json, time, hashlib
 import pyarrow as pa, pyarrow.parquet as pq
 import tiktoken
+from paths import data_root
 t0 = time.time()
 def log(m): print(f"[{time.time()-t0:7.1f}s] {m}", flush=True)
-DW = "/mnt/c/Projekty/datasets/polish-dynaword/data"
-OUT = "/mnt/c/Projekty/datasets/build/shared-core/literacki__ext.parquet"
+DW = str(data_root() / "polish-dynaword/data")
+OUT = str(data_root() / "build/shared-core/literacki__ext.parquet")
 ENC = tiktoken.get_encoding("cl100k_base")
 WS = re.compile(r"\s+")
 def norm(t): return WS.sub(" ", t.lower()).strip()
@@ -78,6 +79,6 @@ tb = pa.table({
 pq.write_table(tb, OUT, compression="zstd")  # ATOMIC: footer gwarantowany
 tot = sum(s.get("tokens_cl100k", 0) for s in stats)
 json.dump({"stats": stats, "total_tokens_cl100k": tot, "rows": len(DOCS)},
-          open("/mnt/c/Projekty/datasets/build/recover-literacki-stats.json", "w"), ensure_ascii=False, indent=2)
+          open(str(data_root() / "build/recover-literacki-stats.json"), "w"), ensure_ascii=False, indent=2)
 log(f"ALL DONE rows={len(DOCS)} tok={tot} -> {OUT}")
 print("RECOVER-LITERACKI:", tot, "cl100k,", len(DOCS), "docs")

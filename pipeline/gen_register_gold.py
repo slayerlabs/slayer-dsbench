@@ -3,12 +3,12 @@
 klasyfikatora e5 na prawdzie, nie silver; rozstrzyga AT1.1). Pelny tekst do 1500 zn.
 Uzycie: python gen_register_gold.py <numer> [N]"""
 import sys, json, random, pyarrow.parquet as pq
-sys.path.insert(0, "/mnt/c/Projekty/Slayer/slayer-dsbench/pipeline")
 from garbage_rules import detect
+from paths import EVAL_SETS, data_root, notes_dir
 
 BATCH = sys.argv[1] if len(sys.argv) > 1 else "04"
 N = int(sys.argv[2]) if len(sys.argv) > 2 else 30
-SLICE = "/mnt/c/Projekty/datasets/build/web/web-slice-0.parquet"
+SLICE = str(data_root() / "build/web/web-slice-0.parquet")
 random.seed(int(BATCH) + 500)
 
 pf = pq.ParquetFile(SLICE)
@@ -49,8 +49,8 @@ for i, (did, txt) in enumerate(picked, 1):
     md.append("rejestr: ______")
     md.append("")
     recs.append({"id": did, "text": txt, "rejestr": ""})
-mdp = f"/mnt/c/Projekty/private/labvault-local/01_ArekSłota/28_08_Klasyfikator-Rejestrow-HPLT/45-Eksperymenty/register-gold-partia-{BATCH}.md"
-jlp = f"/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/register-gold-partia-{BATCH}.jsonl"
+mdp = notes_dir() / f"register-gold-partia-{BATCH}.md"
+jlp = EVAL_SETS / f"register-gold-partia-{BATCH}.jsonl"
 open(mdp,"w",encoding="utf-8").write("\n".join(md))
 open(jlp,"w",encoding="utf-8").write("\n".join(json.dumps(r,ensure_ascii=False) for r in recs))
 print(f"register-gold {BATCH}: {len(picked)} czystych doców")

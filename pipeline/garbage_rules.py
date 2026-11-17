@@ -44,14 +44,15 @@ def scan(path, N):
     return seen,nq,qc,sc,ex
 
 if __name__=="__main__":
+    from paths import EVAL_SETS, data_root
     N=int(sys.argv[1]) if len(sys.argv)>1 else 200000
-    seen,nq,qc,sc,ex=scan("/mnt/c/Projekty/datasets/build/web/web-slice-0.parquet", N)
+    seen,nq,qc,sc,ex=scan(str(data_root() / "build/web/web-slice-0.parquet"), N)
     print(f"=== GARBAGE-RULES v3 (teaser->strip, batch-03) skan N={seen} ===")
     print(f"QUARANTINE (kill): {nq} ({100*nq/seen:.2f}%)")
     for r,c in qc.most_common(): print(f"  [KILL] {r:22} {c:6} ({100*c/seen:.2f}%)")
     print("STRIP (zostaw doc, wytnij fragment):")
     for r,c in sc.most_common(): print(f"  [STRIP] {r:20} {c:6} ({100*c/seen:.2f}%)")
     json.dump({"N":seen,"quarantine_pct":round(100*nq/seen,3),"per_rule_kill":dict(qc),"per_rule_strip":dict(sc)},
-              open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/garbage-rules-scan-v3.json","w",encoding="utf-8"),
+              open(EVAL_SETS / "garbage-rules-scan-v3.json","w",encoding="utf-8"),
               ensure_ascii=False, indent=2)
     print("zapis -> eval_sets/garbage-rules-scan-v3.json")

@@ -26,7 +26,7 @@ def embed(texts, bs=192, maxlen=192):
     return np.concatenate(out)
 
 if __name__ == "__main__":
-    ES = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets"
+    from paths import EVAL_SETS as ES
     rows = [json.loads(l) for l in open(f"{ES}/hplt-register-silver-v1.jsonl", encoding="utf-8") if l.strip()]
     X = embed([r["text"] for r in rows])
     np.save(f"{ES}/silver_emb.npy", X)

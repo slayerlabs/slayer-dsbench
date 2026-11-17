@@ -3,7 +3,7 @@ Inferencja pozniej pure-numpy w rocm-torch (bez sklearn tam)."""
 import json, numpy as np
 from collections import Counter
 from sklearn.linear_model import LogisticRegression
-ES = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets"
+from paths import EVAL_SETS as ES
 X = np.load(f"{ES}/silver_emb.npy")
 y = json.load(open(f"{ES}/silver_labels.json"))
 cnt = Counter(y); keep = {c for c, n in cnt.items() if n >= 8}

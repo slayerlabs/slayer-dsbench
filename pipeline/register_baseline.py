@@ -12,7 +12,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import f1_score, precision_recall_fscore_support, classification_report
 
-PATH = sys.argv[1] if len(sys.argv) > 1 else "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
+from paths import EVAL_SETS
+
+PATH = sys.argv[1] if len(sys.argv) > 1 else EVAL_SETS / "hplt-register-silver-v1.jsonl"
 GATE = {"dialog","qa","howto","nauka","literacki"}  # rejestry bramkowane (precision>=0.90 target)
 MIN_N = 8
 
@@ -61,5 +63,5 @@ res = {"n_total":len(rows),"n_used":len(Xk),"dropped":dropped,"macro_f1_pooled":
        "per_register":{l:{"precision":round(float(p),4),"recall":round(float(r),4),"n":int(s)}
                        for l,p,r,s in zip(labels_sorted,P,R,S)},
        "gate_registers":sorted(GATE),"model":"tfidf(1,2)+logreg(balanced,C=4)"}
-open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/baseline-register-tfidf.json","w",encoding="utf-8").write(json.dumps(res,ensure_ascii=False,indent=2))
+open(EVAL_SETS / "baseline-register-tfidf.json","w",encoding="utf-8").write(json.dumps(res,ensure_ascii=False,indent=2))
 print("\nzapis -> eval_sets/baseline-register-tfidf.json")

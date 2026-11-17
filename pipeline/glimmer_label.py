@@ -5,7 +5,9 @@ na silver-v1 zanim zaufamy mu na bulk train-set. Uzycie: python glimmer_label.py
 import sys, json, urllib.request, random
 from collections import Counter, defaultdict
 
-PATH = "/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/hplt-register-silver-v1.jsonl"
+from paths import EVAL_SETS
+
+PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 URL = "http://127.0.0.1:1234/v1/completions"
 REG = ["news","howto","qa","dialog","literacki","nauka","encyklopedyczny","opinie","legal","web-inne"]
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 120
@@ -65,6 +67,6 @@ errs = sum(1 for _,g in pairs if g.startswith("ERR"))
 if errs: print(f"\nbledy HTTP: {errs}")
 json.dump({"n":N,"n_ok":n_ok,"agreement":round(agree/max(n_ok,1),4),
            "confusion":{o:dict(c) for o,c in conf.items()}},
-          open("/mnt/c/Projekty/Slayer/slayer-dsbench/eval_sets/glimmer-vs-opus.json","w",encoding="utf-8"),
+          open(EVAL_SETS / "glimmer-vs-opus.json","w",encoding="utf-8"),
           ensure_ascii=False, indent=2)
 print("\nzapis -> eval_sets/glimmer-vs-opus.json")
