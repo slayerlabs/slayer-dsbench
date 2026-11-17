@@ -19,7 +19,8 @@ from ..textextract import texts, text_bases
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 PHONE = re.compile(r"(?<!\d)(?:\+48[\s-]?)?(?:\d[\s-]?){8}\d(?!\d)")
-# keyword-adjacent national-ID: etykieta + separatory + do 2 łączników (nr/numer/to/wynosi/jest) + numer typu
+# keyword-adjacent national-ID: etykieta (od granicy słowa) + separatory + do 2 łączników (nr/numer/to/wynosi/jest)
+# + numer typu
 _LABEL_GAP = r"[\s:.\-]{0,4}(?:(?:nr|numer|to|wynosi|jest)\.?[\s:.\-]{0,4}){0,2}"
 
 
@@ -28,10 +29,10 @@ def _digits(n: int) -> str:
     return rf"(?<!\d)(\d(?:[\s\-]?\d){{{n - 1}}})(?!\d)"
 
 
-PESEL_LABELED = re.compile(rf"(?i)PESEL{_LABEL_GAP}{_digits(11)}")
-NIP_LABELED = re.compile(rf"(?i)NIP{_LABEL_GAP}{_digits(10)}")
-REGON_LABELED = re.compile(rf"(?i)REGON{_LABEL_GAP}(?:{_digits(14)}|{_digits(9)})")
-DOWOD_LABELED = re.compile(rf"(?i)dow[o\u00f3]d\s+osobist\w*{_LABEL_GAP}(\d[\d\s\-]{{7,13}}\d)")
+PESEL_LABELED = re.compile(rf"(?i)\bPESEL{_LABEL_GAP}{_digits(11)}")
+NIP_LABELED = re.compile(rf"(?i)\bNIP{_LABEL_GAP}{_digits(10)}")
+REGON_LABELED = re.compile(rf"(?i)\bREGON{_LABEL_GAP}(?:{_digits(14)}|{_digits(9)})")
+DOWOD_LABELED = re.compile(rf"(?i)\bdow[o\u00f3]d\s+osobist\w*{_LABEL_GAP}(\d[\d\s\-]{{7,13}}\d)")
 # goły kandydat PESEL (11 cyfr) — walidowany checksumem+datą (patrz _pesel_valid), kasuje FP
 BARE11 = re.compile(r"(?<!\d)\d{11}(?!\d)")
 _W = (1, 3, 7, 9, 1, 3, 7, 9, 1, 3)

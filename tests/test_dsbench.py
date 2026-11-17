@@ -147,16 +147,27 @@ def test_pii_kontekst_bez_numeru_nie_fp():
         assert not any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
 
-def _pii_levels(text):
+def _pii_issues(text):
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sample.jsonl", json.dumps({"id": "a", "text": text}, ensure_ascii=False) + "\n")
-        return {i.level for i in audit(_card(d), V1).issues if i.check == "pii"}
+        return [i for i in audit(_card(d), V1).issues if i.check == "pii"]
+
+
+def _pii_levels(text):
+    return {i.level for i in _pii_issues(text)}
 
 
 def test_pii_natid_etykieta_i_lacznik_failuje():
     for text in (f"PESEL to {PESEL_OK}", f"PESEL: numer {PESEL_OK}", f"PESEL wynosi {PESEL_ZLA}",
-                 f"PESEL to {PESEL_ZLA}", f"NIP to {NIP_OK}", f"REGON: {REGON14_OK}"):
+                 f"PESEL to {PESEL_ZLA}", f"NIP to {NIP_OK}", f"NIP:{NIP_OK}", f"REGON: {REGON14_OK}"):
         assert "error" in _pii_levels(text), text
+
+
+def test_pii_natid_etykieta_tylko_od_granicy_slowa():
+    """Słowa "Snip"/"Oregon" to nie etykiety NIP/REGON - brak trafienia keyword-adjacent mimo poprawnej sumy."""
+    for text in (f"Snip {NIP_OK}", f"Oregon {REGON9_OK}"):
+        issues = _pii_issues(text)
+        assert not any(i.level == "error" or "NIP/REGON" in i.msg for i in issues), (text, issues)
 
 
 def test_pii_natid_nie_dokleja_sasiedniej_liczby():
@@ -167,9 +178,10 @@ def test_pii_natid_nie_dokleja_sasiedniej_liczby():
 
 def test_pii_natid_nip_regon_zla_suma_ostrzega():
     """Data albo przekręcony numer po etykiecie NIP/REGON → ostrzeżenie, nie FAIL."""
-    for text in ("NIP jest 2024 01 15 12 r.", f"NIP to {NIP_ZLA}"):
-        levels = _pii_levels(text)
-        assert "warn" in levels and "error" not in levels, (text, levels)
+    for text in ("NIP jest 2024 01 15 12 r.", f"NIP to {NIP_ZLA}", f"REGON to {REGON9_OK[:-1]}9"):
+        issues = _pii_issues(text)
+        assert not any(i.level == "error" for i in issues), (text, issues)
+        assert any(i.level == "warn" and "błędną sumą kontrolną" in i.msg for i in issues), (text, issues)
 
 
 def test_pii_natid_dlugosc_i_okno_nie_fp():
