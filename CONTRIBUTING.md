@@ -57,4 +57,4 @@ Otwórz PR. CI odpali **ten sam** audyt + testy silnika. Uzupełnij checklistę 
 - `visibility: internal` — dane prywatne; CI **nie pobiera** pełnych danych, waliduje próbkę + metadane. Nie wrzucaj poufnych danych do publicznego repo.
 
 ## Dekontaminacja
-Eval-sety trzymamy jako **hashe** (`eval_sets/hashes.txt`), nie surowe dane. Nakładka Twojego datasetu z eval-setem = błąd (chroni przed „powołaniem się" modelu na test).
+Eval-sety benchmarków trzymamy jako **hashe** (`eval_sets/hashes.txt`), nie surowe dane. Nakładka Twojego datasetu z eval-setem = błąd (chroni przed „powołaniem się" modelu na test). Pozostałe pliki w `eval_sets/` (próbki do oceny klasyfikatora rejestrów) opisuje `eval_sets/README.md`.

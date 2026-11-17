@@ -1,0 +1,62 @@
+{
+  "model": "multilingual-e5-base+logreg",
+  "n_used": 575,
+  "macro_f1_pooled": 0.6466,
+  "macro_f1_cv": 0.6312,
+  "ci95": 0.0349,
+  "baseline_tfidf": 0.388,
+  "baseline_ci": 0.057,
+  "verdict": "BIJE baseline (CI rozlaczne)",
+  "per_register": {
+    "dialog": {
+      "precision": 0.5714,
+      "recall": 0.5,
+      "n": 32
+    },
+    "encyklopedyczny": {
+      "precision": 0.5455,
+      "recall": 0.3158,
+      "n": 19
+    },
+    "howto": {
+      "precision": 0.7049,
+      "recall": 0.8958,
+      "n": 48
+    },
+    "legal": {
+      "precision": 0.8333,
+      "recall": 0.5,
+      "n": 10
+    },
+    "literacki": {
+      "precision": 0.5,
+      "recall": 0.625,
+      "n": 32
+    },
+    "nauka": {
+      "precision": 0.64,
+      "recall": 0.6809,
+      "n": 47
+    },
+    "news": {
+      "precision": 0.9022,
+      "recall": 0.8865,
+      "n": 229
+    },
+    "opinie": {
+      "precision": 0.5882,
+      "recall": 0.6329,
+      "n": 79
+    },
+    "qa": {
+      "precision": 0.8611,
+      "recall": 0.775,
+      "n": 40
+    },
+    "web-inne": {
+      "precision": 0.6364,
+      "recall": 0.5385,
+      "n": 39
+    }
+  }
+}

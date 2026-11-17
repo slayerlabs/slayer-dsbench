@@ -1,0 +1,7 @@
+name: hplt-registers-example
+version: "0.1"
+license: CC0-1.0
+visibility: internal
+source_url: local://datasets/hplt_v3_pl
+sample: sample.jsonl
+classified_by: opus-silver-v1

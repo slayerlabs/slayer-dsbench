@@ -1,0 +1,17 @@
+{
+  "n": 120,
+  "n_ok": 0,
+  "agreement": 0.0,
+  "confusion": {
+    "news": {},
+    "howto": {},
+    "qa": {},
+    "dialog": {},
+    "literacki": {},
+    "nauka": {},
+    "encyklopedyczny": {},
+    "opinie": {},
+    "legal": {},
+    "web-inne": {}
+  }
+}

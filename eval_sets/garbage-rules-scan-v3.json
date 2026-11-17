@@ -1,0 +1,14 @@
+{
+  "N": 200000,
+  "quarantine_pct": 0.242,
+  "per_rule_kill": {
+    "job_listing_boiler": 10,
+    "dating_profile": 41,
+    "oldman_synonym_spam": 38,
+    "seo_catalog": 431
+  },
+  "per_rule_strip": {
+    "czytaj-wiecej-bloki": 5420,
+    "forum_online_nav": 76
+  }
+}
