@@ -1,7 +1,7 @@
-"""Testy phone_scrub v12b (label-window PII phone-scrub -> [Telefon]).
+"""Testy phone_scrub v20 (label-window PII phone-scrub -> [Telefon]).
 
 Broni obserwowalnego kontraktu: real-phone SCRUB, non-phone (IBAN/date/count/invoice-16) KEEP,
-FP-safe labels (kombinat/komora), bounded-fixpoint convergent. Bateria = klasy złapane v6->v12b.
+FP-safe labels (kombinat/komora), bounded-fixpoint convergent. Bateria = klasy złapane v6->v20.
 """
 from __future__ import annotations
 import pathlib

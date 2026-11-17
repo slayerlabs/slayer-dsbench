@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""dedup_normalized.py — scrub-invariant hash-dedup track B vs baza (i intra-cand).
-MinHash near_dup za wolny (~500 docs/s pure-python = 4.5h na 8M). Tu: normalized-hash
-(usun [PII]-placeholdery + collapse-ws + lower PRZED hashem) -> te-same-zrodlowe docs mimo
-roznego scruba (baza v12b vs track B v20) matchuja. RAM-light: tylko hash-sety (~50MB), NIE sigs.
-Full-norm-hash (identyczne) + prefix-norm-hash (truncation/containment). Streaming, out-of-place.
+"""dedup_normalized.py — hash-dedup track B vs baza (i intra-cand).
+MinHash near_dup za wolny (~500 docs/s pure-python = 4.5h na 8M). Tu: hash SUROWEGO tekstu (norm = identycznosc;
+strip placeholderow i collapse-ws/lower pominiete jako za drogie) -> te-same-zrodlowe docs lacza sie, gdy scrub
+baza v12b i track B v20 dal identyczny tekst. RAM-light: tylko hash-sety (~50MB), NIE sigs.
+Full-hash (identyczne) + prefix-hash (truncation/containment). Streaming, out-of-place.
 Uzycie: python dedup_normalized.py --ref "<base glob>" --cand-glob "<trackB glob>" --outdir <dir> [--prefix-chars 200]
 """
 import argparse, os, re, sys, time, hashlib, glob
