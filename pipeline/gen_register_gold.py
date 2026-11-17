@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Batch register-gold: losowe CZYSTE (nie-kwarantanna) doce -> pytanie o REJESTR (human-gold do walidacji
-klasyfikatora e5 na prawdzie, nie silver; rozstrzyga AT1.1). Pelny tekst do 1500 zn.
+klasyfikatora e5 na prawdzie, nie silver). Pelny tekst do 1500 zn.
 Uzycie: python gen_register_gold.py <numer> [N]"""
 import sys, json, random, pyarrow.parquet as pq
 from garbage_rules import detect

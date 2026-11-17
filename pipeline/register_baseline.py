@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Baseline klasyfikatora rejestrow HPLT (bramka dla encodera, S1).
+"""Baseline klasyfikatora rejestrow HPLT (bramka dla encodera).
 TF-IDF + LogisticRegression, stratified 5-fold CV. Raportuje macro-F1 (±95% CI z foldow)
-+ per-rejestr precision/recall. Prog dla encodera: musi bic te liczby (kryt. obalenia C1).
++ per-rejestr precision/recall. Prog dla encodera: musi bic te liczby.
 Uzycie: python register_baseline.py [sciezka.jsonl]
 """
 import sys, json, numpy as np

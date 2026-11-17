@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministyczny garbage-detektor (reguly z human-gold Arka, batch 01-03). R5 as_kuracja-hplt.
+"""Deterministyczny garbage-detektor (reguly z human-gold Arka, batch 01-03).
 action: quarantine (caly doc smiec) | strip (boilerplate do wyciecia, doc zostaje).
 Batch-03 (Arek 15 werdyktow): 'teaser_listing >=3' OBALONE jako kill -> to STRIP (8/15 wytnij, 4/15 zostaw,
 2/15 usun); licznik nie rozroznia. Kill tylko wysokoprecyzyjne sygnatury spamu.

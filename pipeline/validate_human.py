@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Walidacja AT1.1: e5-klasyfikator (train na silver) vs auto-labeler vs HUMAN-gold (batch-04, 30 doc).
+"""Walidacja: e5-klasyfikator (train na silver) vs auto-labeler vs HUMAN-gold (batch-04, 30 doc).
 Rozstrzyga czy klasyfikator jest realnie dobry czy powiela auto-labeler.
 Uzycie: python validate_human.py <porownanie.json>  (lista rekordow z polami text, human, opus)"""
 import sys, json, numpy as np
