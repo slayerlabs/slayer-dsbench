@@ -5,10 +5,10 @@ import sys
 from huggingface_hub import HfApi, create_repo
 from paths import data_root
 
-DS = str(data_root() / "slayer-pl-8x3b")
 REPO = "SlayerLab/slayer-pl-8x3b"
 
 if __name__ == "__main__":
+    DS = str(data_root() / "slayer-pl-8x3b")
     api = HfApi()
     create_repo(REPO, repo_type="dataset", private=True, exist_ok=True)
     print("repo OK:", REPO)

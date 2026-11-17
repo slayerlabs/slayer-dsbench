@@ -6,19 +6,10 @@ import glob, os, json, hashlib, time
 import pyarrow as pa, pyarrow.parquet as pq
 from paths import data_root
 
-DS = str(data_root() / "slayer-pl-8x3b")
-BUILD = str(data_root() / "build")
-WEB = f"{BUILD}/web"
-SHARED = f"{DS}/shared"
-os.makedirs(SHARED, exist_ok=True)
-
 SCHEMA = pa.schema([("document_id", pa.string()), ("source_id", pa.string()), ("text", pa.string()),
     ("register", pa.string()), ("license", pa.string()), ("provenance", pa.string()),
     ("classified_by", pa.string()), ("garbage", pa.bool_())])
 
-WS = json.load(open(f"{BUILD}/web-backbone-stats.json"))
-SLICE_TOK, SLICE_DOCS = WS["slice_tok"], WS["slice_docs"]
-CORE_TOK = json.load(open(f"{BUILD}/shared-core-FINAL.json"))["total_tokens_cl100k"]
 
 def sha256(path, buf=1 << 20):
     h = hashlib.sha256()
@@ -97,6 +88,14 @@ def pack_web(i, bs=4000):
     return out, M
 
 if __name__ == "__main__":
+    DS = str(data_root() / "slayer-pl-8x3b")
+    BUILD = str(data_root() / "build")
+    WEB = f"{BUILD}/web"
+    SHARED = f"{DS}/shared"
+    os.makedirs(SHARED, exist_ok=True)
+    WS = json.load(open(f"{BUILD}/web-backbone-stats.json"))
+    SLICE_TOK, SLICE_DOCS = WS["slice_tok"], WS["slice_docs"]
+    CORE_TOK = json.load(open(f"{BUILD}/shared-core-FINAL.json"))["total_tokens_cl100k"]
     t0 = time.time()
     # 1) shared core (+SA)
     core_files = sorted(glob.glob(f"{BUILD}/shared-core/*.parquet"))

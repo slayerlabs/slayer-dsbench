@@ -6,22 +6,6 @@ from collections import Counter
 import pyarrow.parquet as pq
 from paths import data_root
 
-DS = str(data_root() / "slayer-pl-8x3b")
-BUILD = str(data_root() / "build")
-SHARED = f"{DS}/shared"
-WS = json.load(open(f"{BUILD}/web-backbone-stats.json"))
-SLICE_TOK, SLICE_DOCS = WS["slice_tok"], WS["slice_docs"]
-# core token total: 4 nieuszkodzone rejestry z shared-core-FINAL + odbudowany literacki (ext recover + base)
-import tiktoken as _tk
-_enc = _tk.get_encoding("cl100k_base")
-_lit_ext = json.load(open(f"{BUILD}/recover-literacki-stats.json"))["total_tokens_cl100k"]
-_lit_base = 0
-for _b in pq.ParquetFile(f"{BUILD}/shared-core/literacki.parquet").iter_batches(batch_size=2000, columns=["text"]):
-    for _t in _b.column(0).to_pylist():
-        _lit_base += len(_enc.encode(_t or ""))
-CORE_TOK = 873502471 + 735149034 + 664726709 + 277043698 + _lit_base + _lit_ext  # qa+enc+nauka+news+literacki(nowy)
-LEG = json.load(open(f"{BUILD}/legal/legal.stats.json"))
-EN = json.load(open(f"{BUILD}/en/en.stats.json"))
 
 def sha256(path, buf=1 << 20):
     h = hashlib.sha256()
@@ -47,6 +31,22 @@ def finfo(path, tokens):
             "sha256": sha256(path), "rozklad_rejestrow": regs}
 
 if __name__ == "__main__":
+    DS = str(data_root() / "slayer-pl-8x3b")
+    BUILD = str(data_root() / "build")
+    SHARED = f"{DS}/shared"
+    WS = json.load(open(f"{BUILD}/web-backbone-stats.json"))
+    SLICE_TOK, SLICE_DOCS = WS["slice_tok"], WS["slice_docs"]
+    # core token total: 4 nieuszkodzone rejestry z shared-core-FINAL + odbudowany literacki (ext recover + base)
+    import tiktoken as _tk
+    _enc = _tk.get_encoding("cl100k_base")
+    _lit_ext = json.load(open(f"{BUILD}/recover-literacki-stats.json"))["total_tokens_cl100k"]
+    _lit_base = 0
+    for _b in pq.ParquetFile(f"{BUILD}/shared-core/literacki.parquet").iter_batches(batch_size=2000, columns=["text"]):
+        for _t in _b.column(0).to_pylist():
+            _lit_base += len(_enc.encode(_t or ""))
+    CORE_TOK = 873502471 + 735149034 + 664726709 + 277043698 + _lit_base + _lit_ext  # qa+enc+nauka+news+literacki(nowy)
+    LEG = json.load(open(f"{BUILD}/legal/legal.stats.json"))
+    EN = json.load(open(f"{BUILD}/en/en.stats.json"))
     t0 = time.time()
     core_n = pq.ParquetFile(f"{SHARED}/core.parquet").metadata.num_rows
     core_sa_n = pq.ParquetFile(f"{SHARED}/core_sa.parquet").metadata.num_rows

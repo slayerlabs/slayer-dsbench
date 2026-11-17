@@ -9,7 +9,6 @@ from garbage_rules import detect
 import e5_gpu
 from paths import EVAL_SETS as ES, data_root
 
-WEB = str(data_root() / "build/web")
 Z = np.load(ES / "logreg_coef.npz", allow_pickle=False)
 COEF, INTER, CLASSES = Z["coef"], Z["intercept"], Z["classes"].astype(str)
 
@@ -75,6 +74,7 @@ def tag_slice(i, bs=2000):
     print(f"[slice {i}] DONE kept={kept} drop={dropped} strip={stripped} {round(time.time()-t0)}s", flush=True)
 
 if __name__ == "__main__":
+    WEB = str(data_root() / "build/web")
     print("TAG-WEB start", flush=True)
     e5_gpu.load()
     print("e5 loaded", flush=True)

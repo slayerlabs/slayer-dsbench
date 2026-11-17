@@ -5,7 +5,6 @@ import glob, re, json
 import pyarrow.parquet as pq
 from paths import data_root
 
-DS = str(data_root() / "slayer-pl-8x3b")
 EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 PHONE = re.compile(r"(?<!\d)(?:\+48\s?)?(?:\d[ -]?){9}(?!\d)")
 PESEL = re.compile(r"(?<!\d)\d{11}(?!\d)")
@@ -22,6 +21,7 @@ def scan(path):
     return {"probka": n, "email": e, "telefon": ph, "pesel_like": pe}
 
 if __name__ == "__main__":
+    DS = str(data_root() / "slayer-pl-8x3b")
     out = {}
     for f in sorted(glob.glob(f"{DS}/shared/*.parquet")) + sorted(glob.glob(f"{DS}/pack-*/web.parquet")):
         k = f.replace(DS + "/", "")
