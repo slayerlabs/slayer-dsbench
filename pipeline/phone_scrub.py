@@ -1,23 +1,23 @@
 """
-phone_scrub_labelwindow v17 — FP-validated extended phone-scrub (Latarnik, 2026-08-07; v17 2026-08-18).
+phone_scrub_labelwindow v20 — FP-validated extended phone-scrub (od 2026-08-07; v20 2026-08-18).
 Label-block-window: scrub phone-format w oknie WINDOW po phone-labelu. Zamyka recall-gap
 (paren/compound/zadzwoń/infolinia/kontakt/dash-landline/2.-w-liście) BEZ over-scrub.
 
-ITERACJE (own-errors → FCD-R4):
+ITERACJE (own-errors):
  v1 recall 97-99%; v2 +kontakt(address-guard); v3 postal-guard-lookahead (dash-landline);
  v4 bare-run-tylko-9-cyfr (over-scrub fix: 10/11-cyfrowe bare ID/timestamp/count przy labelu
     NIE są PL-phone → KEEP; PL-phone bare=9, +48=11, grouped=9-11).
- v7 (Monter-finding batch-5_1): cluster-digit-guard — skip kandydata jesli otaczajacy digit-cluster
+ v7 (finding batch-5_1): cluster-digit-guard — skip kandydata jesli otaczajacy digit-cluster
     >11 cyfr (26-cyfrowy IBAN/konto near 'kontakt'-label -> partial-scrub pierwszych 9-11 = mangling).
 LEKCJA: FP-test MUSI być na REPREZENTATYWNych danych (web: counts/msg-ID/timestamp),
  nie tylko czystej prozie literackiej (wolne_lektury nie miało tych confounderów → v1-3 przepuściły).
 
-FP-validated (FCD-R3, 0-PRZED-gate): wolne_lektury=0; confounders (10-digit-count/unix-ts przy tel)=KEEP;
+FP-validated (0-PRZED-gate): wolne_lektury=0; confounders (10-digit-count/unix-ts przy tel)=KEEP;
 address „Adres kontaktowy 80-339"/postal=KEEP; ISBN/KRS/DATE=KEEP. Recall: paren/compound/dash/2nd=SCRUB.
 IDEMPOTENT (pass2-additional=0 na 6_2 — bezpieczny multi-pass, ale i tak: aplikuj RAZ/regenerate).
-⚠️ Invariant (Wartownik check≥scrub): residual-check MUSI używać TEJ funkcji.
+⚠️ Invariant (check≥scrub): residual-check MUSI używać TEJ funkcji.
 
-v17 (Wartownik b125, 2 realne scrub-missy na 8_6 — bez regresji 19->22 testow):
+v17 (2 realne scrub-missy na 8_6 — bez regresji 19->22 testow):
  (1) foreign-14-struct: _is_phone structured maxlen 13->15 — niemiecki landline 14-cyfr
      "tel. 03591/5251-68000" byl odrzucany (>13). Cluster-guard (>=16 LUB >13+account-kw)
      NADAL blokuje NRB-26/karta-16/KRS -> zero nowych FP (coord/ISBN/NRB = n=0).
