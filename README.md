@@ -19,7 +19,7 @@ Dla kogo: **kontrybutorzy** (wewn./zewn.), osoba **utrzymująca bazę**, i **tre
 ## Jak z tym działać (end-to-end)
 
 ```bash
-pip install -e .          # jedyna zależność: pyyaml
+uv tool install --editable .   # CLI dsbench w osobnym środowisku; zależności: pyyaml, pyarrow (sprawdzone na uv 0.13.9)
 ```
 
 **1. Szkielet karty** dla nowego datasetu:

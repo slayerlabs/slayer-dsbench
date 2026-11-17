@@ -4,7 +4,7 @@ Dataset dodajesz przez **PR**. CI (bramka) sprawdza kartę i jakość — zielon
 
 ## 0. Setup (raz)
 ```bash
-pip install -e .          # jedyna zależność: pyyaml
+uv tool install --editable .   # CLI dsbench w osobnym środowisku; zależności: pyyaml, pyarrow (sprawdzone na uv 0.13.9)
 ```
 
 ## 1. Szkielet karty
@@ -43,6 +43,7 @@ Pola rekordu definiuje formatka (`formats/v1.yaml` → `record_schema`).
 dsbench audit --card datasets/<nazwa>/card.yaml --format formats/v1.yaml
 ```
 Kod wyjścia `0` = PASS, `1` = FAIL.
+Gdy zmieniasz kod silnika: `uv run --with pytest python -m pytest tests pipeline/tests` (sprawdzone na uv 0.13.9).
 
 ## 5. PR
 Otwórz PR. CI odpali **ten sam** audyt + testy silnika. Uzupełnij checklistę z szablonu PR.
