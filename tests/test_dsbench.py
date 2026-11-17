@@ -1,6 +1,7 @@
 """Testy dsbench — kryteria S1/S2/S3 + higiena + kompatybilność chat/nested (messages[])."""
 from __future__ import annotations
 import hashlib
+import json
 import pathlib
 import sys
 import tempfile
@@ -13,6 +14,11 @@ V1 = ROOT / "formats" / "v1.yaml"
 V2 = ROOT / "formats" / "v2.yaml"
 STYLE = ROOT / "formats" / "style-sft.yaml"
 MCQ = ROOT / "formats" / "mcq.yaml"
+
+# Sztuczne numery liczone z sum kontrolnych (nie z danych).
+PESEL_OK, PESEL_ZLA = "92031501232", "92031501233"
+NIP_OK, NIP_ZLA = "7770001246", "7770001247"
+REGON9_OK, REGON14_OK = "710000128", "71000012000016"
 
 
 def _w(d, name, content):
@@ -117,9 +123,9 @@ def test_pii_natid_nip_regon_failuje():
 
 def test_pii_garbled_pesel_labeled_failuje():
     """OCR-garbled PESEL (checksum-INVALID) ale OZNACZONY słowem 'PESEL' → keyword-layer łapie
-    (sam checksum by zgubił). Realne znalezisko z korpusu HPLT."""
+    (sam checksum by zgubił)."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl", '{"id":"a","text":"ustawa PESEL 78031482766 w dniu wydania dokumentu"}\n')
+        _w(d, "sample.jsonl", '{"id":"a","text":"ustawa PESEL %s w dniu wydania dokumentu"}\n' % PESEL_ZLA)
         rep = audit(_card(d), V1)
         assert any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
@@ -139,6 +145,38 @@ def test_pii_kontekst_bez_numeru_nie_fp():
         _w(d, "sample.jsonl", '{"id":"a","text":"podaj numer PESEL w formularzu i zatwierdz wniosek"}\n')
         rep = audit(_card(d), V1)
         assert not any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
+
+
+def _pii_levels(text):
+    with tempfile.TemporaryDirectory() as d:
+        _w(d, "sample.jsonl", json.dumps({"id": "a", "text": text}, ensure_ascii=False) + "\n")
+        return {i.level for i in audit(_card(d), V1).issues if i.check == "pii"}
+
+
+def test_pii_natid_etykieta_i_lacznik_failuje():
+    for text in (f"PESEL to {PESEL_OK}", f"PESEL: numer {PESEL_OK}", f"PESEL wynosi {PESEL_ZLA}",
+                 f"PESEL to {PESEL_ZLA}", f"NIP to {NIP_OK}", f"REGON: {REGON14_OK}"):
+        assert "error" in _pii_levels(text), text
+
+
+def test_pii_natid_nie_dokleja_sasiedniej_liczby():
+    """Numer kończy się na długości typu; następna liczba w zdaniu nie psuje dopasowania."""
+    for text in (f"NIP {NIP_OK} 2020 r.", f"PESEL {PESEL_ZLA} 12 lat", f"REGON {REGON9_OK} 9 osób"):
+        assert "error" in _pii_levels(text), text
+
+
+def test_pii_natid_nip_regon_zla_suma_ostrzega():
+    """Data albo przekręcony numer po etykiecie NIP/REGON → ostrzeżenie, nie FAIL."""
+    for text in ("NIP jest 2024 01 15 12 r.", f"NIP to {NIP_ZLA}"):
+        levels = _pii_levels(text)
+        assert "warn" in levels and "error" not in levels, (text, levels)
+
+
+def test_pii_natid_dlugosc_i_okno_nie_fp():
+    """Liczba cyfr spoza typu albo etykieta daleko od numeru → brak trafienia keyword-adjacent."""
+    for text in ("REGON to 2019-2024 r. 123", f"PESEL {PESEL_ZLA}12", "PESEL to 12345 w przykładzie",
+                 "PESEL:" + "\n" * 7 + PESEL_ZLA):
+        assert _pii_levels(text) == {"info"}, text
 
 
 def test_neardup_wykrywa_fuzzy():
