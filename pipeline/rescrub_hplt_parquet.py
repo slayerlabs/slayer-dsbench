@@ -70,27 +70,27 @@ def rescrub(input_dir: Path, output_dir: Path, batch_size: int = 10_000) -> dict
         outputs = []
         for source in files:
             destination = staging / source.name
-            reader = pq.ParquetFile(source)
-            writer = pq.ParquetWriter(destination, reader.schema_arrow, compression="zstd")
-            try:
-                for batch in reader.iter_batches(batch_size=batch_size):
-                    table = pa.Table.from_batches([batch])
-                    text_index = table.schema.get_field_index("text")
-                    if text_index < 0:
-                        raise ValueError(f"missing text column: {source}")
-                    scrubbed = []
-                    for text in table.column(text_index).to_pylist():
-                        if not isinstance(text, str):
-                            raise ValueError(f"non-string text column value: {source}")
-                        value, count = scrub_text(text)
-                        scrubbed.append(value)
-                        changed += count
-                    text_type = table.schema.field(text_index).type
-                    table = table.set_column(text_index, "text", pa.array(scrubbed, type=text_type))
-                    writer.write_table(table)
-                    documents += table.num_rows
-            finally:
-                writer.close()
+            with pq.ParquetFile(source) as reader:
+                writer = pq.ParquetWriter(destination, reader.schema_arrow, compression="zstd")
+                try:
+                    for batch in reader.iter_batches(batch_size=batch_size):
+                        table = pa.Table.from_batches([batch])
+                        text_index = table.schema.get_field_index("text")
+                        if text_index < 0:
+                            raise ValueError(f"missing text column: {source}")
+                        scrubbed = []
+                        for text in table.column(text_index).to_pylist():
+                            if not isinstance(text, str):
+                                raise ValueError(f"non-string text column value: {source}")
+                            value, count = scrub_text(text)
+                            scrubbed.append(value)
+                            changed += count
+                        text_type = table.schema.field(text_index).type
+                        table = table.set_column(text_index, "text", pa.array(scrubbed, type=text_type))
+                        writer.write_table(table)
+                        documents += table.num_rows
+                finally:
+                    writer.close()
             outputs.append(destination)
 
         manifest_sha256 = write_manifest(staging, outputs)

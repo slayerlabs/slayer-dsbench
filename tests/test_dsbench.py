@@ -18,7 +18,7 @@ MCQ = ROOT / "formats" / "mcq.yaml"
 # Sztuczne numery liczone z sum kontrolnych (nie z danych).
 PESEL_OK, PESEL_ZLA = "92031501232", "92031501233"
 NIP_OK, NIP_ZLA = "7770001246", "7770001247"
-REGON9_OK, REGON14_OK = "710000128", "71000012000016"
+REGON9_OK, REGON9_ZLA, REGON14_OK = "710000128", "710000129", "71000012000016"
 
 
 def _w(d, name, content):
@@ -178,7 +178,7 @@ def test_pii_natid_nie_dokleja_sasiedniej_liczby():
 
 def test_pii_natid_nip_regon_zla_suma_ostrzega():
     """Data albo przekręcony numer po etykiecie NIP/REGON → ostrzeżenie, nie FAIL."""
-    for text in ("NIP jest 2024 01 15 12 r.", f"NIP to {NIP_ZLA}", f"REGON to {REGON9_OK[:-1]}9"):
+    for text in ("NIP jest 2024 01 15 12 r.", f"NIP to {NIP_ZLA}", f"REGON to {REGON9_ZLA}"):
         issues = _pii_issues(text)
         assert not any(i.level == "error" for i in issues), (text, issues)
         assert any(i.level == "warn" and "błędną sumą kontrolną" in i.msg for i in issues), (text, issues)

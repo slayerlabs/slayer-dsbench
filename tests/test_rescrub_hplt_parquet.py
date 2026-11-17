@@ -75,7 +75,13 @@ def test_rescrub_failure_leaves_no_output_or_staging():
         pq.write_table(pa.table({"id": ["a"], "body": ["tel. 812-787-2734"]}), source / "shard.parquet")
 
         output = root / "v20"
-        with pytest.raises(ValueError, match="missing text column"):
+        try:
             rescrub(source, output)
-
-        assert sorted(p.name for p in root.iterdir()) == ["v19"]
+        except ValueError as error:
+            assert "missing text column" in str(error)
+            assert sorted(p.name for p in root.iterdir()) == ["v19"]
+            # Jeszcze w obsłudze błędu plik wejściowy nie może być trzymany otwarty
+            # (na Windows otwarty uchwyt blokuje rename i sprzątanie katalogu).
+            (source / "shard.parquet").rename(source / "moved.parquet")
+        else:
+            pytest.fail("rescrub bez kolumny text nie zgłosił błędu")
