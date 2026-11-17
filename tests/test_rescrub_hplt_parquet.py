@@ -52,6 +52,21 @@ def test_rescrub_creates_distinct_manifest_bound_artifact():
         assert stats == result
 
 
+def test_rescrub_keeps_large_string_text_column():
+    with tempfile.TemporaryDirectory() as directory:
+        root = pathlib.Path(directory)
+        source = root / "v19"
+        source.mkdir()
+        text = pa.array(["tel. 812-787-2734"], type=pa.large_string())
+        pq.write_table(pa.table({"id": ["a"], "text": text}), source / "shard.parquet")
+
+        rescrub(source, root / "v20")
+
+        column = pq.read_table(root / "v20" / "shard.parquet").column("text")
+        assert column.type == pa.large_string()
+        assert column.to_pylist() == ["tel. [Telefon]"]
+
+
 def test_rescrub_failure_leaves_no_output_or_staging():
     with tempfile.TemporaryDirectory() as directory:
         root = pathlib.Path(directory)

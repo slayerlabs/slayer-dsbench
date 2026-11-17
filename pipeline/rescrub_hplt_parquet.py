@@ -85,7 +85,8 @@ def rescrub(input_dir: Path, output_dir: Path, batch_size: int = 10_000) -> dict
                         value, count = scrub_text(text)
                         scrubbed.append(value)
                         changed += count
-                    table = table.set_column(text_index, "text", pa.array(scrubbed, type=pa.string()))
+                    text_type = table.schema.field(text_index).type
+                    table = table.set_column(text_index, "text", pa.array(scrubbed, type=text_type))
                     writer.write_table(table)
                     documents += table.num_rows
             finally:
