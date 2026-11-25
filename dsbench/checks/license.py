@@ -12,15 +12,27 @@ Dwa poziomy granulacji, jeden check:
 Zero hardkodu pól: nazwy pól rekordu czytane z formatki (jak `text_fields`/`id_field`).
 Gdy formatka nie wskazuje `license_field` albo rekordy go nie niosą → obowiązuje parasol karty
 (pełna wsteczna zgodność — dawne datasety bez zmian)."""
+
 from __future__ import annotations
 from collections import Counter, defaultdict
 from ..models import Issue
 from ..registry import check
 from ..schema import load_yaml
 
-OPEN = ("CC0", "CC-BY", "CC-PD", "PDDL", "ODC-BY", "ODBL", "MIT", "APACHE",
-        "PUBLICDOMAIN", "PUBLIC-DOMAIN", "PUBLIC DOMAIN")
-RESTRICTED = ("-NC", "-ND")   # non-commercial / no-derivatives → NIE do wolnej redystrybucji
+OPEN = (
+    "CC0",
+    "CC-BY",
+    "CC-PD",
+    "PDDL",
+    "ODC-BY",
+    "ODBL",
+    "MIT",
+    "APACHE",
+    "PUBLICDOMAIN",
+    "PUBLIC-DOMAIN",
+    "PUBLIC DOMAIN",
+)
+RESTRICTED = ("-NC", "-ND")  # non-commercial / no-derivatives → NIE do wolnej redystrybucji
 
 
 def _status(lic: str) -> str:
@@ -43,13 +55,15 @@ def _is_open(lic: str) -> bool:
 @check("license")
 def run(ctx) -> list:
     out = []
-    lic = str(ctx.card.get("license") or "").strip()   # licencja TEKSTU/danych (parasol źródła)
+    lic = str(ctx.card.get("license") or "").strip()  # licencja TEKSTU/danych (parasol źródła)
     vis = ctx.card.get("visibility")
     if vis == "external":
         if not lic:
             out.append(Issue("error", "license", "card", "external BEZ licencji tekstu — wymagana otwarta licencja"))
         elif not _is_open(lic):
-            out.append(Issue("warn", "license", "card", f"licencja tekstu '{lic}' nie wygląda na otwartą (SPDX) — sprawdź"))
+            out.append(
+                Issue("warn", "license", "card", f"licencja tekstu '{lic}' nie wygląda na otwartą (SPDX) — sprawdź")
+            )
         else:
             out.append(Issue("info", "license", "card", f"licencja tekstu: {lic}"))
     elif vis == "internal":
@@ -57,7 +71,7 @@ def run(ctx) -> list:
             out.append(Issue("warn", "license", "card", "internal bez licencji (OK, ale oznacz prawa/źródło)"))
         else:
             out.append(Issue("info", "license", "card", f"internal, licencja tekstu: {lic}"))
-    coll = str(ctx.card.get("collection_license") or "CC0-1.0").strip()   # kolekcja/metadane (dynaword)
+    coll = str(ctx.card.get("collection_license") or "CC0-1.0").strip()  # kolekcja/metadane (dynaword)
     out.append(Issue("info", "license", "card", f"licencja kolekcji/metadanych: {coll}"))
 
     # PER DOKUMENT/ŹRÓDŁO — aktywne tylko gdy formatka wskazuje pole i rekordy je niosą.
@@ -90,10 +104,10 @@ def _load_manifest(ctx):
 def _per_record(ctx, vis) -> list:
     lf = ctx.formatka.get("license_field")
     sf = ctx.formatka.get("source_field")
-    manifest, out = _load_manifest(ctx)            # out startuje z ewentualnym błędem manifestu
+    manifest, out = _load_manifest(ctx)  # out startuje z ewentualnym błędem manifestu
     if not lf and not manifest:
-        return out                                 # brak per-rekord i brak manifestu → parasol karty
-    per_source: dict = defaultdict(Counter)        # źródło -> {licencja: liczba}
+        return out  # brak per-rekord i brak manifestu → parasol karty
+    per_source: dict = defaultdict(Counter)  # źródło -> {licencja: liczba}
     covered = 0
     for rec in ctx.records:
         if not isinstance(rec, dict):
@@ -102,16 +116,15 @@ def _per_record(ctx, vis) -> list:
         rec_lic = rec_lic.strip() if isinstance(rec_lic, str) and rec_lic.strip() else None
         src = rec.get(sf) if sf else None
         src = src.strip() if isinstance(src, str) and src.strip() else "(brak źródła)"
-        eff = rec_lic or manifest.get(src)         # licencja rekordu WYGRYWA, manifest uzupełnia
+        eff = rec_lic or manifest.get(src)  # licencja rekordu WYGRYWA, manifest uzupełnia
         if not eff:
-            continue                               # brak jednej i drugiej → parasol karty
+            continue  # brak jednej i drugiej → parasol karty
         covered += 1
         per_source[src][eff] += 1
     if covered == 0:
-        return out                                 # nikt nie niesie licencji → parasol karty
+        return out  # nikt nie niesie licencji → parasol karty
     summary = "; ".join(
-        f"{src}: " + ", ".join(f"{l}×{n}" for l, n in sorted(cnt.items()))
-        for src, cnt in sorted(per_source.items())
+        f"{src}: " + ", ".join(f"{l}×{n}" for l, n in sorted(cnt.items())) for src, cnt in sorted(per_source.items())
     )
     out.append(Issue("info", "license", "data", f"licencje per źródło ({covered} dok.): {summary}"))
 
@@ -128,11 +141,23 @@ def _per_record(ctx, vis) -> list:
     if vis == "external":
         if restricted:
             det = ", ".join(f"{l}×{n}" for l, n in sorted(restricted.items()))
-            out.append(Issue("error", "license", "data",
-                             f"external: dokumenty z licencją NIE-otwartą (NC/ND/zamknięta): {det} "
-                             "— usuń lub przeklasyfikuj (zatruwają kompilację)"))
+            out.append(
+                Issue(
+                    "error",
+                    "license",
+                    "data",
+                    f"external: dokumenty z licencją NIE-otwartą (NC/ND/zamknięta): {det} "
+                    "— usuń lub przeklasyfikuj (zatruwają kompilację)",
+                )
+            )
         if unknown:
             det = ", ".join(f"{l}×{n}" for l, n in sorted(unknown.items()))
-            out.append(Issue("warn", "license", "data",
-                             f"external: licencje per-dok nierozpoznane (nie-SPDX?): {det} — zweryfikuj"))
+            out.append(
+                Issue(
+                    "warn",
+                    "license",
+                    "data",
+                    f"external: licencje per-dok nierozpoznane (nie-SPDX?): {det} — zweryfikuj",
+                )
+            )
     return out

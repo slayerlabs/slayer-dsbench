@@ -11,6 +11,7 @@ national-ID wykrywany DWUWARSTWOWO — precyzja + pokrycie, zmierzone FP-safe:
   2. gołe 11 cyfr walidowane checksumem+datą PESEL — łapie NIEoznaczone PESELe, a kasuje
      śmieci (URLe/kody-produktów/nr-polis: 93/95 gołych-11-cyfr na realnym korpusie to FP,
      checksum je odrzuca; naiwne \\d{11} dawało 95 fałszywych trafień)."""
+
 from __future__ import annotations
 import re
 from ..models import Issue
@@ -67,8 +68,10 @@ def _labeled_ids(text: str) -> tuple[int, int]:
     """(błędy, ostrzeżenia) z warstwy keyword-adjacent."""
     errors = len(PESEL_LABELED.findall(text)) + len(DOWOD_LABELED.findall(text))
     warnings = 0
-    for valid, matches in ((_nip_valid, NIP_LABELED.findall(text)),
-                           (_regon_valid, (a or b for a, b in REGON_LABELED.findall(text)))):
+    for valid, matches in (
+        (_nip_valid, NIP_LABELED.findall(text)),
+        (_regon_valid, (a or b for a, b in REGON_LABELED.findall(text))),
+    ):
         for m in matches:
             if valid(re.sub(r"[\s\-]", "", m)):
                 errors += 1
@@ -95,14 +98,33 @@ def run(ctx) -> list:
             n_pesel += sum(1 for m in BARE11.findall(v) if _pesel_valid(m))
     out = []
     if ctx.records and tx == 0:
-        out.append(Issue("error", "pii", "data", "text_fields nie wyłuskało tekstu — skan PII NIE wykonany (blokada; napraw formatkę)"))
+        out.append(
+            Issue(
+                "error",
+                "pii",
+                "data",
+                "text_fields nie wyłuskało tekstu — skan PII NIE wykonany (blokada; napraw formatkę)",
+            )
+        )
     n_id = n_natid + n_pesel
     if n_id:
-        out.append(Issue("error", "pii", "data",
-                         f"national-ID wykryty: {n_id} (oznaczone PESEL/NIP/REGON/dowód: {n_natid}, gołe PESEL checksum-valid: {n_pesel}) — zredaguj przed publikacją"))
+        out.append(
+            Issue(
+                "error",
+                "pii",
+                "data",
+                f"national-ID wykryty: {n_id} (oznaczone PESEL/NIP/REGON/dowód: {n_natid}, gołe PESEL checksum-valid: {n_pesel}) — zredaguj przed publikacją",
+            )
+        )
     if n_natid_warn:
-        out.append(Issue("warn", "pii", "data",
-                         f"NIP/REGON oznaczone, ale z błędną sumą kontrolną: {n_natid_warn} — sprawdź (data/zakres lat albo przekręcony numer)"))
+        out.append(
+            Issue(
+                "warn",
+                "pii",
+                "data",
+                f"NIP/REGON oznaczone, ale z błędną sumą kontrolną: {n_natid_warn} — sprawdź (data/zakres lat albo przekręcony numer)",
+            )
+        )
     if n_email:
         out.append(Issue("warn", "pii", "data", f"emaile: {n_email} — rozważ redakcję"))
     if n_phone:

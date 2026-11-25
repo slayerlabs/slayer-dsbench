@@ -1,4 +1,5 @@
 """Unikalność ID (dynaword): pole id_field musi być unikalne. Brak pola → pominięcie."""
+
 from __future__ import annotations
 from ..models import Issue
 from ..registry import check

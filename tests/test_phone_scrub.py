@@ -3,6 +3,7 @@
 Broni obserwowalnego kontraktu: real-phone SCRUB, non-phone (IBAN/date/count/invoice-16) KEEP,
 FP-safe labels (kombinat/komora), bounded-fixpoint convergent. Bateria = klasy złapane v6->v20.
 """
+
 from __future__ import annotations
 import pathlib
 import re
@@ -32,9 +33,14 @@ IBAN = "26 1140 2004 0000 3002 0135 5387"
 
 
 def test_labeled_phones_scrubbed():
-    for s in ["tel. 22-266-86-18 biuro", "kontakt 601 983 672 x",
-              "infolinia 800 123 456", "dzwoń 608837979 w sprawie",
-              "kom. 501 234 567", "zadzwoń pod nr tel.: 12 345 67 89"]:
+    for s in [
+        "tel. 22-266-86-18 biuro",
+        "kontakt 601 983 672 x",
+        "infolinia 800 123 456",
+        "dzwoń 608837979 w sprawie",
+        "kom. 501 234 567",
+        "zadzwoń pod nr tel.: 12 345 67 89",
+    ]:
         out, n = _fix(s)
         assert n >= 1 and "[Telefon]" in out, (s, out)
         assert not _mangled(out), out
@@ -62,9 +68,11 @@ def test_newline_adjacent_list_both_scrubbed():
 
 def test_iban_account_kept_no_mangle():
     # cluster>11 + account-kw -> skip (v7/v9/v10); brak partial-scrub mangle
-    for s in ["NR KONTA BS: kontaktowy " + IBAN,
-              "Bankverbindung: kontakt PL " + IBAN,
-              "kontakt Konto Santander: " + IBAN]:
+    for s in [
+        "NR KONTA BS: kontaktowy " + IBAN,
+        "Bankverbindung: kontakt PL " + IBAN,
+        "kontakt Konto Santander: " + IBAN,
+    ]:
         out, n = _fix(s)
         assert n == 0 and not _mangled(out), (s, out)
 
@@ -78,9 +86,13 @@ def test_genuine_phone_after_account_word_scrubbed():
 
 def test_non_phone_kept():
     # FP-safe: date / long-count / invoice-16-digit / kombinat-komora (kom-label FP) / no-label
-    for s in ["wydarzenie 2009-01-22 godz 14", "kombinat produkcyjny 123456789 ton",
-              "w komorze 12345678 stopni", "faktura 1234 5678 9012 3456 zapłać",
-              "numer klienta 123456789012 w systemie"]:
+    for s in [
+        "wydarzenie 2009-01-22 godz 14",
+        "kombinat produkcyjny 123456789 ton",
+        "w komorze 12345678 stopni",
+        "faktura 1234 5678 9012 3456 zapłać",
+        "numer klienta 123456789012 w systemie",
+    ]:
         out, n = _fix(s)
         assert n == 0, (s, out)
 
@@ -101,8 +113,10 @@ def test_labeled_bare10_scrubbed():
 
 def test_nrb_near_label_kept():
     # v13.1 (Wartownik NRB-edge): 26-digit NRB near "kontaktu" label -> KEEP (>=16-digit cluster = account, nie telefon)
-    for s in ["kontaktu telefonicznego i internetowego.57 1020 1127 0000 1402 0010 2475",
-              "kontakt: 1020 1127 0000 1402 0010 2475 nr rachunku"]:
+    for s in [
+        "kontaktu telefonicznego i internetowego.57 1020 1127 0000 1402 0010 2475",
+        "kontakt: 1020 1127 0000 1402 0010 2475 nr rachunku",
+    ]:
         out, n = _fix(s)
         assert n == 0 and not _mangled(out), (s, out)
 
@@ -129,32 +143,47 @@ def test_v14_currency_kept():
 
 def test_v15_realleaks_scrubbed():
     # v15 (Wartownik 8_5 719-leak): foreign-paren, +spacja, label-po-numerze, distance>55
-    for s in ["Telefon: (0044) 161 24 54 130 konsulat", "Prospect ( 847) 870 56 56 tel",
-              "Anna Raszewska (690 88 99 22) tel", "telefoniczny Kolodziejczak 728461533 lub"]:
+    for s in [
+        "Telefon: (0044) 161 24 54 130 konsulat",
+        "Prospect ( 847) 870 56 56 tel",
+        "Anna Raszewska (690 88 99 22) tel",
+        "telefoniczny Kolodziejczak 728461533 lub",
+    ]:
         out, n = _fix(s)
         assert n >= 1 and "[Telefon]" in out, (s, out)
 
 
 def test_v15_fp_kept():
     # v15 FP-guard: szersze okno/paren NIE lapie faktury/godzin/count przy tel-labelu
-    for s in ["faktura 4567 dnia tel biuro", "zamowienie 12345 sztuk tel dzial",
-              "tel godz 8 00 do 16 00 czynne", "Tel KRS: 0000245014 XIII"]:
+    for s in [
+        "faktura 4567 dnia tel biuro",
+        "zamowienie 12345 sztuk tel dzial",
+        "tel godz 8 00 do 16 00 czynne",
+        "Tel KRS: 0000245014 XIII",
+    ]:
         out, n = _fix(s)
         assert n == 0, (s, out)
 
 
 def test_v16_paren_newline_and_godz_scrubbed():
     # v16 (Wartownik 8_5 re-run): \n w/po nawiasie + godz-CURR-FP (telefon przed godzinami)
-    for s in ["Numer telefonu: (56) 683\n70 67 biuro", "tel. (022)\n5979663 czynne",
-              "tel. 84 66 30 247 godz. 7.30-15.30"]:
+    for s in [
+        "Numer telefonu: (56) 683\n70 67 biuro",
+        "tel. (022)\n5979663 czynne",
+        "tel. 84 66 30 247 godz. 7.30-15.30",
+    ]:
         out, n = _fix(s)
         assert n >= 1 and "[Telefon]" in out, (s, out)
 
 
 def test_v16_no_mangle_coords_isbn_timestamp():
     # v16 anti-mangle (digit-anchor): NIE scrubuj cyfr wewnatrz wspolrzednych/ISBN/timestamp przy tel-labelu
-    for s in ["wspolrzedne tel 52.1234567890 N szer", "ISBN tel. 9788301123456 ksiazka",
-              "czas kontakt 12.12.2024 14:30:00 start", "dane kontaktowe wsp 21.123456 51.98765"]:
+    for s in [
+        "wspolrzedne tel 52.1234567890 N szer",
+        "ISBN tel. 9788301123456 ksiazka",
+        "czas kontakt 12.12.2024 14:30:00 start",
+        "dane kontaktowe wsp 21.123456 51.98765",
+    ]:
         out, n = _fix(s)
         assert n == 0 and "[Telefon]" not in out, (s, out)
 
@@ -245,7 +274,12 @@ def test_v20_dash_spacing_pl():
 
 def test_v20_no_regression_coord_date_hours():
     # v20 anti-mangle: separator-flex NIE lapie coord/data-spaced/godzin (bez kropki, guardy trzymaja)
-    for s in ["wsp 52.1234567890 N", "data 2020 - 01 - 15 rok", "godziny 900 - 1700 otwarte", "wsp 52 - 21 - 1234567 N"]:
+    for s in [
+        "wsp 52.1234567890 N",
+        "data 2020 - 01 - 15 rok",
+        "godziny 900 - 1700 otwarte",
+        "wsp 52 - 21 - 1234567 N",
+    ]:
         out, n = _fix(s)
         assert n == 0, (s, out)
 

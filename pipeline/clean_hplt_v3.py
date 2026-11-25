@@ -8,6 +8,7 @@ Output: kanoniczna 8-kolumnowa schema (id/text/source/added/created/token_count/
 
 Pola v3: text, lang[list], prob[list], u(url), doc_scores[list], web-register{dict}, c(mime), id.
 """
+
 from __future__ import annotations
 import argparse, json, os, re, sys, time
 from pathlib import Path
@@ -15,6 +16,7 @@ from urllib.parse import urlparse
 import zstandard as zstd
 import pyarrow as pa, pyarrow.parquet as pq
 import tiktoken
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # local pipeline modules
 import phone_scrub
 from auto_clean_mangle import clean as _mangle_clean
@@ -26,17 +28,38 @@ LICENSE = "CC0-1.0"
 BOILERPLATE_RE = re.compile(
     r"(cookies?|privacy policy|terms of service|all rights reserved|"
     r"polityka prywatno\u015bci|regulamin|wszelkie prawa zastrze\u017cone|"
-    r"zaloguj|rejestracja|newsletter)", re.I)
+    r"zaloguj|rejestracja|newsletter)",
+    re.I,
+)
 ADULT_SPAM_RE = re.compile(
     r"(porn|sex|escort|casino|viagra|cialis|bukmacher|hazard|"
-    r"porno|seks|erotycz|kasyno|randki)", re.I)
+    r"porno|seks|erotycz|kasyno|randki)",
+    re.I,
+)
 LEGALISH_RE = re.compile(
     r"\b(ustawa|rozporz\u0105dzenie|dz\.u\.|sejm|senat|parlament|eur-lex|"
-    r"trybuna\u0142|s\u0105d|wyrok|kodeks|komisja europejska)\b", re.I)
-EXCLUDED_DOMAIN_PARTS = {".bip.", "bip.", "docplayer.pl", "mapa-kodow-pocztowych.pl",
-                         "slideplayer.pl", "wikipedia.org", "wikisource.org", "wikibooks.org",
-                         "wikiquote.org", "wikivoyage.org", "chomikuj.pl", "scribd.com",
-                         "pdfcoffee.com", "dokumen.pub", "docer.pl", "ebookpoint", "wolnelektury.pl"}
+    r"trybuna\u0142|s\u0105d|wyrok|kodeks|komisja europejska)\b",
+    re.I,
+)
+EXCLUDED_DOMAIN_PARTS = {
+    ".bip.",
+    "bip.",
+    "docplayer.pl",
+    "mapa-kodow-pocztowych.pl",
+    "slideplayer.pl",
+    "wikipedia.org",
+    "wikisource.org",
+    "wikibooks.org",
+    "wikiquote.org",
+    "wikivoyage.org",
+    "chomikuj.pl",
+    "scribd.com",
+    "pdfcoffee.com",
+    "dokumen.pub",
+    "docer.pl",
+    "ebookpoint",
+    "wolnelektury.pl",
+}
 # mojibake: polskie znaki UTF-8 zdekodowane jako CJK/inne (upstream HPLT extraction bug)
 MOJIBAKE_RE = re.compile(r"[\u2e00-\u9fff\uff00-\uffef\ufffd]")
 # naglowki serwisow wymiany plikow / PDF-ripow (ryzyko piractwa)
@@ -44,11 +67,21 @@ PDFHOST_RE = re.compile(r"(\d+\s*Pages?\s*[\u2022\u00b7]|Uploaded at|\d+\s*Words
 MAX_CHARS = 120000  # ~40k tok: powyzej to ksiazki (copyright/OCR-risk), nie strony web
 ALLOWED_REGISTERS = {"ID", "OP", "HI", "IN", "NA"}
 
-CANON = pa.schema([("id", pa.string()), ("text", pa.string()), ("source", pa.string()),
-                   ("added", pa.string()), ("created", pa.string()),
-                   ("token_count", pa.int64()), ("license", pa.string()), ("author", pa.string())])
+CANON = pa.schema(
+    [
+        ("id", pa.string()),
+        ("text", pa.string()),
+        ("source", pa.string()),
+        ("added", pa.string()),
+        ("created", pa.string()),
+        ("token_count", pa.int64()),
+        ("license", pa.string()),
+        ("author", pa.string()),
+    ]
+)
 
 ENC = tiktoken.get_encoding("cl100k_base")
+
 
 def domain(url):
     if not url:
@@ -56,11 +89,13 @@ def domain(url):
     h = urlparse(url).netloc.lower()
     return h[4:] if h.startswith("www.") else h
 
+
 def top_register(reg):
     if not isinstance(reg, dict) or not reg:
         return "", 0.0
     k, v = max(reg.items(), key=lambda kv: kv[1] or 0.0)
     return str(k), float(v or 0.0)
+
 
 PII_PLACEHOLDER = "[PII]"
 # +-prefixed intl phone; FP-safe (0 trafien na prozie wolne_lektury), lapie HPLT-annotation-gap
@@ -70,7 +105,10 @@ PHONE_RE = re.compile(r"\+[ ]?\d[\d ()\-]{7,}\d")  # v15: opcjonalna spacja po '
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 # national-ID: keyword (PESEL/NIP/REGON/dowod) + PRZYLEGAJACY 9-13 digit -> redact NUMER (Wartownik-finding 8_2).
 # FP-safe = label-adjacent + >=9 cyfr (kontekstowe "podaj PESEL" bez numeru NIE zlapane; RODO najwyzsza wrazliwosc).
-NATID_RE = re.compile(r"(?i)(PESEL|NIP|REGON|dow[o\u00f3]d\s+osobist\w*)([\s:.\-]{0,4}(?:nr\.?|numer)?[\s:.\-]{0,4})(\d[\d\s\-]{7,13}\d)")
+NATID_RE = re.compile(
+    r"(?i)(PESEL|NIP|REGON|dow[o\u00f3]d\s+osobist\w*)([\s:.\-]{0,4}(?:nr\.?|numer)?[\s:.\-]{0,4})(\d[\d\s\-]{7,13}\d)"
+)
+
 
 def scrub_pii(text, spans, max_frac):
     """Redaguj PII: HPLT pii-spany [[start,end],...] (offsety SUROWEGO text) + supplementary
@@ -107,12 +145,15 @@ def scrub_pii(text, spans, max_frac):
     # phone-scrub v12b: PHONE_RE (+48-intl, label-less) + label-window (labeled any-format, bounded-fixpoint) -> [Telefon]; + mangle-clean
     out, n_phone = PHONE_RE.subn("[Telefon]", out)
     for _ in range(8):
-        out, _k = phone_scrub.scrub_phones_labelwindow(out); n_phone += _k
-        if _k == 0: break
+        out, _k = phone_scrub.scrub_phones_labelwindow(out)
+        n_phone += _k
+        if _k == 0:
+            break
     out, _ = _mangle_clean(out)
     # national-ID keyword-adjacent numer (PESEL/NIP/REGON/dowod) - RODO high-sensitivity, FP-safe (label+>=9digit)
     out, n_natid = NATID_RE.subn(lambda m: m.group(1) + m.group(2) + PII_PLACEHOLDER, out)
     return out, n_hplt + n_phone + n_natid, False
+
 
 def keep(o, min_chars, min_words, min_lang_prob, max_mt, dom_counts, max_per_domain):
     lang = o.get("lang")
@@ -154,12 +195,17 @@ def keep(o, min_chars, min_words, min_lang_prob, max_mt, dom_counts, max_per_dom
         return None, "legalish"
     return text, "kept"
 
+
 def open_input(path):
     """Local file or URL (stream) -> binary readable context manager."""
     if str(path).startswith("http"):
         import urllib.request
-        return urllib.request.urlopen(urllib.request.Request(path, headers={"User-Agent": "slayer-dsbench/1.0"}), timeout=120)
+
+        return urllib.request.urlopen(
+            urllib.request.Request(path, headers={"User-Agent": "slayer-dsbench/1.0"}), timeout=120
+        )
     return open(path, "rb")
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -174,16 +220,30 @@ def main():
     ap.add_argument("--max-mt-prob", type=float, default=0.20)
     ap.add_argument("--max-per-domain", type=int, default=250)
     ap.add_argument("--max-records", type=int, default=0)
-    ap.add_argument("--max-pii-frac", type=float, default=0.02,
-                    help="drop-doc gdy PII-char-frakcja > prog (katalog kontaktowy); redakcja spanow zawsze")
-    ap.add_argument("--shard-mod", type=int, default=0, help="parallel: przetwarzaj tylko docs gdzie (raw_idx %% shard-mod)==shard-idx (0=off)")
+    ap.add_argument(
+        "--max-pii-frac",
+        type=float,
+        default=0.02,
+        help="drop-doc gdy PII-char-frakcja > prog (katalog kontaktowy); redakcja spanow zawsze",
+    )
+    ap.add_argument(
+        "--shard-mod",
+        type=int,
+        default=0,
+        help="parallel: przetwarzaj tylko docs gdzie (raw_idx %% shard-mod)==shard-idx (0=off)",
+    )
     ap.add_argument("--shard-idx", type=int, default=0, help="parallel worker index [0..shard-mod)")
     a = ap.parse_args()
-    src = a.source; out = a.out_name or a.source
-    outd = Path(a.out_dir); outd.mkdir(parents=True, exist_ok=True)
+    src = a.source
+    out = a.out_name or a.source
+    outd = Path(a.out_dir)
+    outd.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
-    drops = {}; regs = {}; doms = {}; dom_counts = {}
+    drops = {}
+    regs = {}
+    doms = {}
+    dom_counts = {}
     ids, texts, tokens = [], [], []
     read = kept = chars = toks = 0
     mt_sum = 0.0
@@ -196,10 +256,21 @@ def main():
         if not ids:
             return
         n = len(ids)
-        writer.write_table(pa.table({
-            "id": ids, "text": texts, "source": [src]*n, "added": [ADDED]*n,
-            "created": [""]*n, "token_count": tokens, "license": [LICENSE]*n, "author": [""]*n},
-            schema=CANON))
+        writer.write_table(
+            pa.table(
+                {
+                    "id": ids,
+                    "text": texts,
+                    "source": [src] * n,
+                    "added": [ADDED] * n,
+                    "created": [""] * n,
+                    "token_count": tokens,
+                    "license": [LICENSE] * n,
+                    "author": [""] * n,
+                },
+                schema=CANON,
+            )
+        )
         ids, texts, tokens = [], [], []
 
     with open_input(a.inp) as fh:
@@ -228,56 +299,87 @@ def main():
                     continue
                 if npii:
                     o["text"] = scrubbed
-                text, reason = keep(o, a.min_chars, a.min_words, a.min_lang_prob,
-                                    a.max_mt_prob, dom_counts, a.max_per_domain)
+                text, reason = keep(
+                    o, a.min_chars, a.min_words, a.min_lang_prob, a.max_mt_prob, dom_counts, a.max_per_domain
+                )
                 if text is None:
                     drops[reason] = drops.get(reason, 0) + 1
                     continue
                 if npii:
-                    pii_docs += 1; pii_spans_removed += npii
-                host = domain(o.get("u")); dom_counts[host] = dom_counts.get(host, 0) + 1
+                    pii_docs += 1
+                    pii_spans_removed += npii
+                host = domain(o.get("u"))
+                dom_counts[host] = dom_counts.get(host, 0) + 1
                 if len(doms) < 500:
                     doms[host] = doms.get(host, 0) + 1
                 reg = o.get("web-register") or {}
-                rtop, _ = top_register(reg); regs[rtop] = regs.get(rtop, 0) + 1
+                rtop, _ = top_register(reg)
+                regs[rtop] = regs.get(rtop, 0) + 1
                 mt_sum += float(reg.get("MT", 0.0)) if isinstance(reg, dict) else 0.0
                 tk = len(ENC.encode(text, disallowed_special=()))
-                resid_email += len(EMAIL_RE.findall(text)); resid_phone += len(PHONE_RE.findall(text)); resid_natid += len(NATID_RE.findall(text))
-                ids.append(f"{out}_{kept}"); texts.append(text); tokens.append(tk)
-                kept += 1; chars += len(text); toks += tk
+                resid_email += len(EMAIL_RE.findall(text))
+                resid_phone += len(PHONE_RE.findall(text))
+                resid_natid += len(NATID_RE.findall(text))
+                ids.append(f"{out}_{kept}")
+                texts.append(text)
+                tokens.append(tk)
+                kept += 1
+                chars += len(text)
+                toks += tk
                 if len(ids) >= 1000:
                     flush()
                 if read % 20000 == 0:
-                    print(f"  read={read:,} kept={kept:,} tok={toks:,} ({time.time()-t0:.0f}s)", flush=True)
+                    print(f"  read={read:,} kept={kept:,} tok={toks:,} ({time.time() - t0:.0f}s)", flush=True)
                 if a.max_records and kept >= a.max_records:
-                    buf = b""; break
+                    buf = b""
+                    break
             else:
                 continue
             break
-    flush(); writer.close()
+    flush()
+    writer.close()
 
-    stats = {"read": read, "kept": kept, "drop_short": drops.get("short", 0),
-             "drop_lang": drops.get("language", 0) + drops.get("lang_prob", 0),
-             "drop_dup": 0, "drop_ocr": 0, "chars": chars, "tokens": toks,
-             "licenses": {LICENSE: kept}, "authors_with_value": 0, "license": LICENSE,
-             "stats_recomputed_from_parquet": True,
-             "drop_detail": drops, "registers": regs,
-             "pii_docs_scrubbed": pii_docs, "pii_spans_removed": pii_spans_removed,
-             "drop_pii_dense": drops.get("pii_dense", 0),
-             "raw_email_residual": resid_email, "raw_phone_residual": resid_phone, "raw_natid_residual": resid_natid,
-             "pii_residual_clean": (resid_email == 0 and resid_phone == 0 and resid_natid == 0),
-             "mt_prob_mean_kept": round(mt_sum / max(1, kept), 3),
-             "domains_top_sample": dict(sorted(doms.items(), key=lambda x: -x[1])[:30]),
-             "secs": round(time.time()-t0, 1),
-             "source_repo": f"HPLT/HPLT3.0 pol_Latn {a.bin_label} via {a.inp}"}
-    (outd / f"{out}.stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    stats = {
+        "read": read,
+        "kept": kept,
+        "drop_short": drops.get("short", 0),
+        "drop_lang": drops.get("language", 0) + drops.get("lang_prob", 0),
+        "drop_dup": 0,
+        "drop_ocr": 0,
+        "chars": chars,
+        "tokens": toks,
+        "licenses": {LICENSE: kept},
+        "authors_with_value": 0,
+        "license": LICENSE,
+        "stats_recomputed_from_parquet": True,
+        "drop_detail": drops,
+        "registers": regs,
+        "pii_docs_scrubbed": pii_docs,
+        "pii_spans_removed": pii_spans_removed,
+        "drop_pii_dense": drops.get("pii_dense", 0),
+        "raw_email_residual": resid_email,
+        "raw_phone_residual": resid_phone,
+        "raw_natid_residual": resid_natid,
+        "pii_residual_clean": (resid_email == 0 and resid_phone == 0 and resid_natid == 0),
+        "mt_prob_mean_kept": round(mt_sum / max(1, kept), 3),
+        "domains_top_sample": dict(sorted(doms.items(), key=lambda x: -x[1])[:30]),
+        "secs": round(time.time() - t0, 1),
+        "source_repo": f"HPLT/HPLT3.0 pol_Latn {a.bin_label} via {a.inp}",
+    }
+    (outd / f"{out}.stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("=== STATS ===")
-    print(json.dumps({k: v for k, v in stats.items() if k not in ("domains_top_sample",)}, ensure_ascii=False, indent=2))
-    print(f"parquet={outd/(out+'.parquet')} ({os.path.getsize(outd/(out+'.parquet')):,}B)")
+    print(
+        json.dumps({k: v for k, v in stats.items() if k not in ("domains_top_sample",)}, ensure_ascii=False, indent=2)
+    )
+    print(f"parquet={outd / (out + '.parquet')} ({os.path.getsize(outd / (out + '.parquet')):,}B)")
     if resid_email or resid_phone or resid_natid:
-        print(f"!!! PII-RESIDUAL-FAIL email={resid_email} phone={resid_phone} natid={resid_natid} — gap, INVESTIGATE przed accept/PR", flush=True)
+        print(
+            f"!!! PII-RESIDUAL-FAIL email={resid_email} phone={resid_phone} natid={resid_natid} — gap, INVESTIGATE przed accept/PR",
+            flush=True,
+        )
     else:
         print("PII-RESIDUAL-CLEAN email=0 phone=0 natid=0 — safety-gate PASS", flush=True)
+
 
 if __name__ == "__main__":
     main()

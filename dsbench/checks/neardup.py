@@ -4,17 +4,18 @@ WARN (nie ERROR): near-dup bywa legalny (podobne-ale-różne) — sygnał do prz
 
 Czysto-python (hashlib blake2b + trik (a·h+b) mod p), zero zależności ponad stdlib.
 Skanuje wyłuskany tekst (nested-aware). Na pełnych blobach podawaj sample/shard (jak reszta dsbench)."""
+
 from __future__ import annotations
 import hashlib
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts
 
-_K = 5          # k-słowowe shingle
-_N = 64         # permutacje MinHash
-_BANDS = 16     # LSH: 16 pasm × 4 wiersze (próg ~ (1/b)^(1/r) ≈ 0.5, weryfikacja jaccardem)
+_K = 5  # k-słowowe shingle
+_N = 64  # permutacje MinHash
+_BANDS = 16  # LSH: 16 pasm × 4 wiersze (próg ~ (1/b)^(1/r) ≈ 0.5, weryfikacja jaccardem)
 _ROWS = _N // _BANDS
-_THR = 0.8      # próg near-dup (estymata jaccarda z pełnego podpisu)
+_THR = 0.8  # próg near-dup (estymata jaccarda z pełnego podpisu)
 _P = (1 << 61) - 1
 # deterministyczne (a,b) dla _N funkcji haszujących (seed stały → reprodukowalnie)
 _AB = [(pow(7, i + 1, _P) | 1, pow(13, i + 1, _P)) for i in range(_N)]
@@ -24,7 +25,7 @@ def _shingles(text: str) -> set:
     w = text.split()
     if len(w) < _K:
         return {text.strip()} if text.strip() else set()
-    return {" ".join(w[i:i + _K]) for i in range(len(w) - _K + 1)}
+    return {" ".join(w[i : i + _K]) for i in range(len(w) - _K + 1)}
 
 
 def _sig(sh: set) -> tuple:
@@ -52,7 +53,7 @@ def run(ctx) -> list:
     for i, sig in enumerate(sigs):
         cand = set()
         for band in range(_BANDS):
-            key = (band, sig[band * _ROWS:(band + 1) * _ROWS])
+            key = (band, sig[band * _ROWS : (band + 1) * _ROWS])
             cand.update(buckets.get(key, ()))
             buckets.setdefault(key, []).append(i)
         for j in cand:
@@ -61,6 +62,12 @@ def run(ctx) -> list:
                 near += 1
                 break
     if near:
-        return [Issue("warn", "neardup", "data",
-                      f"near-duplikaty (fuzzy, jaccard≥{_THR}): {near} — rozważ dedup (exact hash ich nie łapie)")]
+        return [
+            Issue(
+                "warn",
+                "neardup",
+                "data",
+                f"near-duplikaty (fuzzy, jaccard≥{_THR}): {near} — rozważ dedup (exact hash ich nie łapie)",
+            )
+        ]
     return [Issue("info", "neardup", "data", "near-duplikaty: 0")]

@@ -1,4 +1,5 @@
 """Statystyki próbki (info, nigdy nie failuje). Tekst nested-aware (text_fields)."""
+
 from __future__ import annotations
 from ..models import Issue
 from ..registry import check

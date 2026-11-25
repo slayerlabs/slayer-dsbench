@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Create a distinct, atomically-promoted re-scrubbed HPLT Parquet artifact."""
+
 from __future__ import annotations
 
 import argparse

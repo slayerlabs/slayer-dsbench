@@ -1,5 +1,6 @@
 """Dekontaminacja: nakładki tekstu (nested-aware) z eval-setami (po HASHACH).
 FAIL-LOUD: gdy nic nie wyłuskano, OSTRZEGA (nie raportuje „0 nakładek" w próżni)."""
+
 from __future__ import annotations
 import hashlib
 import pathlib
@@ -35,7 +36,14 @@ def run(ctx) -> list:
             if hashlib.sha256(_norm(t).encode("utf-8")).hexdigest() in evalset:
                 over += 1
     if ctx.records and tx == 0:
-        return [Issue("error", "decontam", "data", "text_fields nie wyłuskało tekstu — dekontaminacja NIE wykonana (blokada; napraw formatkę)")]
+        return [
+            Issue(
+                "error",
+                "decontam",
+                "data",
+                "text_fields nie wyłuskało tekstu — dekontaminacja NIE wykonana (blokada; napraw formatkę)",
+            )
+        ]
     if over:
         return [Issue("error", "decontam", "data", f"nakładki z eval-setami: {over}")]
     return [Issue("info", "decontam", "data", f"nakładki z eval-setami: 0 ({len(evalset)} hashy)")]
