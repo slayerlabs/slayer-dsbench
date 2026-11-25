@@ -4,6 +4,7 @@ Pliki repo (eval_sets/, datasets/) liczone względem repo. Dane spoza repo (zbud
 build/, polish-dynaword) pod katalogiem z DSBENCH_DATA; brak zmiennej = STOP, bez zgadywania ścieżki.
 Arkusze do ręcznego przeglądu (.md) idą do DSBENCH_NOTES (domyślnie katalog bieżący).
 """
+
 import os
 from pathlib import Path
 
@@ -15,8 +16,9 @@ DATASETS = REPO / "datasets"
 def data_root() -> Path:
     v = os.environ.get("DSBENCH_DATA")
     if not v:
-        raise SystemExit("STOP: ustaw DSBENCH_DATA na katalog danych "
-                         "(zawiera slayer-pl-8x3b/, build/, polish-dynaword/)")
+        raise SystemExit(
+            "STOP: ustaw DSBENCH_DATA na katalog danych (zawiera slayer-pl-8x3b/, build/, polish-dynaword/)"
+        )
     return Path(v)
 
 

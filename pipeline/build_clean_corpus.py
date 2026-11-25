@@ -9,10 +9,17 @@ Czyszczenie boilerplate (2 warstwy, po odkryciu residualu 394k embedded Odpowied
 => pure one-variable (tylko boilerplate; SOFT + tresc zachowane).
 Usage: python build_clean_corpus.py TRAIN_OUT.bin VAL_OUT.bin
 """
-import sys, time, re, numpy as np, pyarrow.parquet as pq
+
+import re
+import sys
+import time
+
+import numpy as np
+import pyarrow.parquet as pq
 from tokenizers import Tokenizer
+
 sys.path.insert(0, r"C:/tmp/dsbench-monter")
-from dsbench.checks.boilerplate import _classify   # HARD line-tier (Wartownik), FP-safe
+from dsbench.checks.boilerplate import _classify  # HARD line-tier (Wartownik), FP-safe
 
 TOK = "C:/Projekty/Slayer/tokenizer/ppuzio/tokenizers/dynaword-32k/tokenizer.json"
 SRC = "C:/Projekty/Slayer/datasets/polish-dynaword-expansion/PREVIEW-korpus.parquet"  # dokladnie zrodlo v1
@@ -54,7 +61,8 @@ for batch in pf.iter_batches(batch_size=BATCH, columns=["text"]):
         if not s:
             continue
         c, nl, nsp = strip_boiler(s)
-        line_stripped += nl; span_stripped += nsp
+        line_stripped += nl
+        span_stripped += nsp
         c = c.strip()
         if not c:
             emptied += 1
@@ -80,12 +88,18 @@ for batch in pf.iter_batches(batch_size=BATCH, columns=["text"]):
     if ndoc - last >= 100000:
         last = ndoc
         dt = time.time() - t0
-        print(f"docs={ndoc:,} train_tok={ntok_tr/1e6:.1f}M val_tok={len(val_ids)/1e6:.2f}M "
-              f"line={line_stripped:,} span={span_stripped:,} emptied={emptied} "
-              f"{ntok_tr/max(1,dt)/1e3:.0f}k tok/s [{dt:.0f}s]", flush=True)
+        print(
+            f"docs={ndoc:,} train_tok={ntok_tr / 1e6:.1f}M val_tok={len(val_ids) / 1e6:.2f}M "
+            f"line={line_stripped:,} span={span_stripped:,} emptied={emptied} "
+            f"{ntok_tr / max(1, dt) / 1e3:.0f}k tok/s [{dt:.0f}s]",
+            flush=True,
+        )
 ft.close()
 np.asarray(val_ids, dtype=np.uint16).tofile(VAL_OUT)
 dt = time.time() - t0
-print(f"\nDONE docs={ndoc:,} train_tok={ntok_tr:,} ({ntok_tr/1e6:.1f}M, {ntok_tr*2/1e9:.2f}GB) "
-      f"val_tok={len(val_ids):,} ({len(val_ids)/1e6:.2f}M) line_stripped={line_stripped:,} "
-      f"span_stripped={span_stripped:,} emptied_docs={emptied} [{dt:.0f}s]\ntrain={TRAIN_OUT}\nval={VAL_OUT}", flush=True)
+print(
+    f"\nDONE docs={ndoc:,} train_tok={ntok_tr:,} ({ntok_tr / 1e6:.1f}M, {ntok_tr * 2 / 1e9:.2f}GB) "
+    f"val_tok={len(val_ids):,} ({len(val_ids) / 1e6:.2f}M) line_stripped={line_stripped:,} "
+    f"span_stripped={span_stripped:,} emptied_docs={emptied} [{dt:.0f}s]\ntrain={TRAIN_OUT}\nval={VAL_OUT}",
+    flush=True,
+)

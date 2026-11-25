@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Create a distinct, atomically-promoted re-scrubbed HPLT Parquet artifact."""
+
 from __future__ import annotations
 
 import argparse
@@ -12,10 +13,8 @@ from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-
 from auto_clean_mangle import clean as clean_mangle
 from phone_scrub import scrub_phones_labelwindow
-
 
 MANIFEST_NAME = "SHA256SUMS"
 

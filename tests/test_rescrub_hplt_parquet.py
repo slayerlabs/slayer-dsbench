@@ -21,14 +21,16 @@ def test_rescrub_creates_distinct_manifest_bound_artifact():
         source = root / "v19"
         source.mkdir()
         source_file = source / "shard.parquet"
-        original = pa.table({
-            "id": ["a", "b", "c"],
-            "text": [
-                "tel. 812-787-2734",
-                "nr telefonu: 56 45 10 310",
-                "współrzędne 52.229676, 21.012228",
-            ],
-        })
+        original = pa.table(
+            {
+                "id": ["a", "b", "c"],
+                "text": [
+                    "tel. 812-787-2734",
+                    "nr telefonu: 56 45 10 310",
+                    "współrzędne 52.229676, 21.012228",
+                ],
+            }
+        )
         pq.write_table(original, source_file, compression="zstd")
         (source / MANIFEST_NAME).write_text("source-manifest\n", encoding="utf-8", newline="\n")
 

@@ -1,11 +1,14 @@
 """CLI — cienki adapter nad silnikiem (ten sam kod co CI). Karta może deklarować `format`."""
+
 from __future__ import annotations
+
 import argparse
 import pathlib
 import sys
+
+from . import registry
 from .engine import audit
 from .schema import load_card
-from . import registry
 
 CARD_TEMPLATE = """name: <nazwa>
 version: 0.1.0
@@ -78,11 +81,21 @@ def main(argv=None):
         sp.add_argument("--data", default=None, help="pełny plik danych (domyślnie: próbka z karty)")
         sp.add_argument("--json", action="store_true", help="raport JSON zamiast markdown")
 
-    sp = sub.add_parser("audit", help="pełny audyt (schema + checki)"); common(sp); sp.set_defaults(fn=cmd_audit)
-    sp = sub.add_parser("validate", help="tylko schema"); common(sp); sp.set_defaults(fn=cmd_validate)
-    sp = sub.add_parser("card", help="raport-karta (markdown)"); common(sp); sp.set_defaults(fn=cmd_card)
-    sp = sub.add_parser("init", help="szkielet karty"); sp.add_argument("path"); sp.add_argument("--force", action="store_true"); sp.set_defaults(fn=cmd_init)
-    sp = sub.add_parser("checks", help="lista checków"); sp.set_defaults(fn=cmd_checks)
+    sp = sub.add_parser("audit", help="pełny audyt (schema + checki)")
+    common(sp)
+    sp.set_defaults(fn=cmd_audit)
+    sp = sub.add_parser("validate", help="tylko schema")
+    common(sp)
+    sp.set_defaults(fn=cmd_validate)
+    sp = sub.add_parser("card", help="raport-karta (markdown)")
+    common(sp)
+    sp.set_defaults(fn=cmd_card)
+    sp = sub.add_parser("init", help="szkielet karty")
+    sp.add_argument("path")
+    sp.add_argument("--force", action="store_true")
+    sp.set_defaults(fn=cmd_init)
+    sp = sub.add_parser("checks", help="lista checków")
+    sp.set_defaults(fn=cmd_checks)
 
     a = p.parse_args(argv)
     return a.fn(a)

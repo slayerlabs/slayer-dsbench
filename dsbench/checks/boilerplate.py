@@ -12,8 +12,11 @@ FP-gate: markery HARD zwalidowane 0-na-czystej-prozie (wolne_lektury) PRZED prom
 phone-regex-hardening. Falsyfikowalność bramki: scrub korpusu BEZ spadku emisji modelu = check
 nie działa (nie ufamy samej korpus-metryce; emisja przed/po = domknięcie, mierzy eval).
 """
+
 from __future__ import annotations
+
 import re
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts
@@ -23,18 +26,30 @@ _norm = lambda s: re.sub(r"\s+", "", s.strip().lower())
 
 # HARD — comment/nav-cruft, zero-FP na prozie (Wartownik, bateria FP). Match: znormalizowana linia == marker.
 HARD = {
-    "odpowiedzusuń", "odpowiedzusun",
-    "prześlijkomentarz", "przeslijkomentarz",
+    "odpowiedzusuń",
+    "odpowiedzusun",
+    "prześlijkomentarz",
+    "przeslijkomentarz",
     "brakkomentarzy",
     "dodajkomentarz",
-    "nowszypost", "starszypost",
-    "komentarzedoposta", "komentarzedopostu",
+    "nowszypost",
+    "starszypost",
+    "komentarzedoposta",
+    "komentarzedopostu",
 }
 # SOFT — FP-podatne (legalne w treści): tylko flaga, NIGDY auto-strip.
 SOFT = {
-    "regulamin", "czytajwięcej", "czytajwiecej", "czytajdalej",
-    "stronagłówna", "stronaglowna", "zalogujsię", "zalogujsie",
-    "podzielsię", "podzielsie", "pozdrawiam",
+    "regulamin",
+    "czytajwięcej",
+    "czytajwiecej",
+    "czytajdalej",
+    "stronagłówna",
+    "stronaglowna",
+    "zalogujsię",
+    "zalogujsie",
+    "podzielsię",
+    "podzielsie",
+    "pozdrawiam",
 }
 
 
@@ -48,7 +63,7 @@ def _classify(line: str) -> str | None:
     # dwukropku) MUSI iść obiekt-widgetu; sam label ("Subskrybuj:") też OK. Linia krótka (nie akapit).
     # FP-safe: proza "Subskrybuję tę gazetę ... komentarze" i "Subskrybuj: W markecie <opis>" NIE łapane.
     if n.startswith("subskrybuj") and len(n) < 130:
-        rest = n[len("subskrybuj"):]
+        rest = n[len("subskrybuj") :]
         if rest[:1] == ":":
             rest = rest[1:]
         if (not rest) or rest.startswith(("komentarz", "kanał", "kanal", "posty", "(atom")):
@@ -88,18 +103,36 @@ def run(ctx) -> list:
         if has_soft:
             docs_soft += 1
     if ctx.records and tx == 0:
-        out.append(Issue("error", "boilerplate", "data",
-                         "text_fields nie wyłuskało tekstu — skan boilerplate NIE wykonany (blokada; napraw formatkę)"))
+        out.append(
+            Issue(
+                "error",
+                "boilerplate",
+                "data",
+                "text_fields nie wyłuskało tekstu — skan boilerplate NIE wykonany (blokada; napraw formatkę)",
+            )
+        )
         return out
     pct = (100.0 * docs_hard / docs) if docs else 0.0
     if docs_hard:
         top = sorted(hard_by_marker.items(), key=lambda kv: -kv[1])[:5]
         top_s = ", ".join(f"{k}:{v}" for k, v in top)
-        out.append(Issue("warn", "boilerplate", "data",
-                         f"web-boilerplate HARD: {docs_hard} dok ({pct:.2f}%), {hard_lines} linii — strip przed treningiem [{top_s}]"))
+        out.append(
+            Issue(
+                "warn",
+                "boilerplate",
+                "data",
+                f"web-boilerplate HARD: {docs_hard} dok ({pct:.2f}%), {hard_lines} linii — strip przed treningiem [{top_s}]",
+            )
+        )
     if soft_lines:
-        out.append(Issue("info", "boilerplate", "data",
-                         f"boilerplate SOFT (flag-only, FP-podatne, NIE auto-strip): {docs_soft} dok, {soft_lines} linii"))
+        out.append(
+            Issue(
+                "info",
+                "boilerplate",
+                "data",
+                f"boilerplate SOFT (flag-only, FP-podatne, NIE auto-strip): {docs_soft} dok, {soft_lines} linii",
+            )
+        )
     if docs and not docs_hard:
         out.append(Issue("info", "boilerplate", "data", "web-boilerplate HARD czyste (0 dok)"))
     return out

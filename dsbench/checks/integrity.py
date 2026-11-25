@@ -1,8 +1,11 @@
 """Integralność (S2): sha256 pliku vs karta + zgodność liczby rekordów (num_examples, styl HF).
 num_examples liczony TYLKO na pełnych danych, nie na próbce."""
+
 from __future__ import annotations
+
 import hashlib
 import os
+
 from ..models import Issue
 from ..registry import check
 
@@ -26,18 +29,33 @@ def run(ctx) -> list:
     else:
         got = sha256_file(ctx.data_path)
         if got.lower() != str(want).lower():
-            out.append(Issue("error", "integrity", "data",
-                             f"sha256 NIEZGODNE: karta={str(want)[:12]}… plik={got[:12]}… (podmiana danych?)"))
+            out.append(
+                Issue(
+                    "error",
+                    "integrity",
+                    "data",
+                    f"sha256 NIEZGODNE: karta={str(want)[:12]}… plik={got[:12]}… (podmiana danych?)",
+                )
+            )
         else:
             out.append(Issue("info", "integrity", "data", "sha256 OK"))
 
-    want_n = ctx.card.get("records")   # num_examples (HF-style)
+    want_n = ctx.card.get("records")  # num_examples (HF-style)
     if want_n is not None and ctx.data_path:
         is_sample = os.path.basename(ctx.data_path) == str(ctx.card.get("sample", ""))
         if is_sample:
-            out.append(Issue("info", "integrity", "data", f"records={want_n} (deklaracja; walidacja na próbce — totalu nie liczę)"))
+            out.append(
+                Issue(
+                    "info",
+                    "integrity",
+                    "data",
+                    f"records={want_n} (deklaracja; walidacja na próbce — totalu nie liczę)",
+                )
+            )
         elif len(ctx.records) != want_n:
-            out.append(Issue("error", "integrity", "data", f"liczba rekordów {len(ctx.records)} ≠ records={want_n} (karta)"))
+            out.append(
+                Issue("error", "integrity", "data", f"liczba rekordów {len(ctx.records)} ≠ records={want_n} (karta)")
+            )
         else:
             out.append(Issue("info", "integrity", "data", f"liczba rekordów zgodna: {want_n}"))
     return out

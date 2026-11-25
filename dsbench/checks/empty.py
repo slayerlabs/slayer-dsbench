@@ -1,5 +1,7 @@
 """Puste teksty (nested-aware): rekord bez tekstu lub z pustym/białym tekstem = błąd."""
+
 from __future__ import annotations
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts

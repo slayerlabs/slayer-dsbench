@@ -1,7 +1,10 @@
 """Duplikaty TREŚCI (nested-aware): hash wyłuskanego tekstu (fallback: cały rekord). >0 = błąd."""
+
 from __future__ import annotations
+
 import hashlib
 import json
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts

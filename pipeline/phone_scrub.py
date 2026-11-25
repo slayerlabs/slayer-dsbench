@@ -25,6 +25,7 @@ v17 (2 realne scrub-missy na 8_6 — bez regresji 19->22 testow):
      pod-lapuje span, a cluster-guard blokuje 18-cyfr blob. Fallback: rozszerz do pelnego runu,
      potnij na '/', jesli KAZDA strona to plausible phone (9-13 struct) -> scrubuj caly span.
 """
+
 import re
 
 PHONE_LABEL = re.compile(
@@ -40,17 +41,26 @@ PHONE_NUM = re.compile(
 _DATE = re.compile(r"(?:19|20)\d{2}[\s\-./]\d{1,2}[\s\-./]\d{1,2}")
 _KRS = re.compile(r"\b0000\d{6}\b")
 _ISBN = re.compile(r"\b97[89][\s\-]")
-_ADDR = re.compile(r"(?i)\b(ul\.|ulic\w*|adres\w*|kod\s+poczt\w*)")  # v8 (Monter): usunieto bare \d{2}-\d{3} (matchowal phone-internal '82-397' -> label-window-skip -> gubik leading-0-landline; 5-cyfr-postal <9 -> _is_phone odrzuca, wiec zbedny)
-_ACCT = re.compile(r"(?i)\b(konto|kont[ao]|rachun\w*|iban|nr\s+konta|nr\s+rachun\w*|bankverbindung|bic|swift)\b")  # v8-final (Wartownik verified-spec): account-SPECIFIC (BEZ bare-bank: banki maja telefony), number-anchored pre-30
-_CURR = re.compile(r"(?i)^\s{0,3}(z[lł]|pln|eur|usd|gbp|%)\b|^\s{0,2}[€$£]")  # v16: TYLKO waluta (usunieto godz/km/kg/szt/ton/mln - "godz" zjadalo telefon przed godzinami otwarcia, Wartownik)
+_ADDR = re.compile(
+    r"(?i)\b(ul\.|ulic\w*|adres\w*|kod\s+poczt\w*)"
+)  # v8 (Monter): usunieto bare \d{2}-\d{3} (matchowal phone-internal '82-397' -> label-window-skip -> gubik leading-0-landline; 5-cyfr-postal <9 -> _is_phone odrzuca, wiec zbedny)
+_ACCT = re.compile(
+    r"(?i)\b(konto|kont[ao]|rachun\w*|iban|nr\s+konta|nr\s+rachun\w*|bankverbindung|bic|swift)\b"
+)  # v8-final (Wartownik verified-spec): account-SPECIFIC (BEZ bare-bank: banki maja telefony), number-anchored pre-30
+_CURR = re.compile(
+    r"(?i)^\s{0,3}(z[lł]|pln|eur|usd|gbp|%)\b|^\s{0,2}[€$£]"
+)  # v16: TYLKO waluta (usunieto godz/km/kg/szt/ton/mln - "godz" zjadalo telefon przed godzinami otwarcia, Wartownik)
 WINDOW = 75  # v15: 55->75 (Wartownik 8_5: numer 56-70 zn od labela / po newline+nazwisko przeciekał)
 PLACEHOLDER = "[Telefon]"  # v6 (Arek): semantic-tag NIE fake-number — fixed-fake poisonuje (model memoryzuje high-freq numer); tag = slot-koncept bez memoryzacji
+
 
 def _is_phone(seg: str) -> bool:
     """PL/foreign-phone plausibility. WYLACZNIE label-anchored (po PHONE_LABEL) -> label = mocny dowod."""
     d = re.sub(r"\D", "", seg)
     has_struct = bool(re.search(r"[\s\-/()]", seg.strip())) or seg.strip().startswith("+")
-    core = d[2:] if d.startswith("00") else d  # v15: strip intl-prefix "00" (foreign "(0044) 161..." = 14 cyfr surowych, 12 znaczacych)
+    core = (
+        d[2:] if d.startswith("00") else d
+    )  # v15: strip intl-prefix "00" (foreign "(0044) 161..." = 14 cyfr surowych, 12 znaczacych)
     # v14 (Wartownik foreign-12/ext): structured (separatory/+) do 13 cyfr (foreign country-code+national, ext '/26'); bare (goly run) do 11 (bare-12/13 = ID). v13: bez bare-length sub-gate (RODO safe-superset).
     # v17 (Wartownik b125): structured maxlen 13->15 — niemiecki landline 14-cyfr "03591/5251-68000" byl gubiony. Cluster-guard (>=16 LUB >13+account-kw) NADAL blokuje NRB-26/karta-16/KRS.
     if len(core) < 9 or len(core) > (15 if has_struct else 11):
@@ -60,6 +70,7 @@ def _is_phone(seg: str) -> bool:
     if _KRS.search(seg) or _DATE.search(seg) or _ISBN.search(seg):
         return False
     return True
+
 
 def _multi_split(run: str) -> bool:
     """v18 (Wartownik b2): True gdy run = >=2 telefony sklejone (each _is_phone). Rozroznia dwa-numery od NRB/konta.
@@ -73,9 +84,10 @@ def _multi_split(run: str) -> bool:
     # NRB-26/IBAN-28 total>22 -> wykluczone (regresja-guard bez wymogu -,/, bo Wartownik b2 = space-merge bez myslnika).
     if sum(c.isdigit() for c in r) <= 22:
         for mm in re.finditer(r"\s+", r):
-            if _is_phone(r[:mm.start()]) and _is_phone(r[mm.end():]):
+            if _is_phone(r[: mm.start()]) and _is_phone(r[mm.end() :]):
                 return True
     return False
+
 
 def _passes_guards(text, a, b):
     """Cluster/CURR guardy wspolne dla normal + wrap-match. a,b = span numeru w text.
@@ -88,11 +100,12 @@ def _passes_guards(text, a, b):
     while ce < len(text) and text[ce] in "0123456789 -":  # cluster-end
         ce += 1
     cluster_digits = sum(c.isdigit() for c in text[cs:ce])
-    if cluster_digits > 13 and (cluster_digits >= 24 or _ACCT.search(text[max(0, cs - 30):cs])):
+    if cluster_digits > 13 and (cluster_digits >= 24 or _ACCT.search(text[max(0, cs - 30) : cs])):
         return False  # v19: >=24-cyfr cluster (NRB-26/IBAN-28) LUB >13+account-kw = NIE telefon. 16->24: dwa telefony obok (17-22cyfr, bez ACCT) NIE bloka (Wartownik b2 space-merge); karta-16/long-single lapie _is_phone (>15 struct/>11 bare)
-    if _CURR.match(text[ce:ce + 6]):
+    if _CURR.match(text[ce : ce + 6]):
         return False  # v14: liczba+waluta/jednostka (zl/PLN/EUR/%/km) = cena/miara nie telefon (scrub_v38 CURR-guard)
     return True
+
 
 def scrub_phones_labelwindow(text: str):
     """Zwraca (scrubbed_text, n_scrubbed). FP-safe: label-anchored window + _is_phone + cluster/NEG/CURR-guardy."""
@@ -101,12 +114,12 @@ def scrub_phones_labelwindow(text: str):
     spans = []
     for m in PHONE_LABEL.finditer(text):
         ws = m.end()
-        win = text[ws:ws + WINDOW]
+        win = text[ws : ws + WINDOW]
         for nm in PHONE_NUM.finditer(win):
             g = nm.group()
             a, b = ws + nm.start(), ws + nm.end()
             if _is_phone(g) and _passes_guards(text, a, b):
-                while a < b and text[a].isspace():   # trim otaczajace spacje
+                while a < b and text[a].isspace():  # trim otaczajace spacje
                     a += 1
                 while b > a and text[b - 1].isspace():
                     b -= 1
@@ -124,11 +137,11 @@ def scrub_phones_labelwindow(text: str):
             run = win[rs:re_]
             if _multi_split(run):
                 aa, bb = ws + rs, ws + re_
-                if not _CURR.match(text[bb:bb + 6]) and not _ACCT.search(text[max(0, aa - 30):aa]):
+                if not _CURR.match(text[bb : bb + 6]) and not _ACCT.search(text[max(0, aa - 30) : aa]):
                     spans.append((aa, bb))
         # v15 bidirectional: numer PRZED labelem ("(690 88 99 22) tel", "( 847) 870 56 56 tel")
         pre_s = max(0, m.start() - WINDOW)
-        pcand = list(PHONE_NUM.finditer(text[pre_s:m.start()]))
+        pcand = list(PHONE_NUM.finditer(text[pre_s : m.start()]))
         if pcand:
             nm = pcand[-1]  # najblizszy labela
             if _is_phone(nm.group()):
@@ -140,7 +153,7 @@ def scrub_phones_labelwindow(text: str):
                         b -= 1
                     spans.append((a, b))
         # v14/v16 \n-join: numer zawiniety przez \n (pre-\n <9 cyfr = niepelny). v16: dopusc nawias "(56) 683\n70 67", "(022)\n5979663"
-        for wm in re.finditer(r"(\(?\d[\d \t\-()]{0,18})\n([ \t]*\d[\d \t\-()]{0,18}\d)", text[ws:ws + WINDOW + 20]):
+        for wm in re.finditer(r"(\(?\d[\d \t\-()]{0,18})\n([ \t]*\d[\d \t\-()]{0,18}\d)", text[ws : ws + WINDOW + 20]):
             pre_d = sum(c.isdigit() for c in wm.group(1))
             tot_d = pre_d + sum(c.isdigit() for c in wm.group(2))
             if pre_d < 9 and 9 <= tot_d <= 11:

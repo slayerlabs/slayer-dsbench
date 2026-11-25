@@ -1,5 +1,7 @@
 """Testy dsbench — kryteria S1/S2/S3 + higiena + kompatybilność chat/nested (messages[])."""
+
 from __future__ import annotations
+
 import hashlib
 import json
 import pathlib
@@ -28,9 +30,12 @@ def _w(d, name, content):
 
 
 def _card(d, sample="sample.jsonl", extra=""):
-    return _w(d, "card.yaml",
-              "name: t\nversion: 0.1.0\nlicense: CC0-1.0\nvisibility: external\n"
-              f"source_url: http://x\nsample: {sample}\n{extra}")
+    return _w(
+        d,
+        "card.yaml",
+        "name: t\nversion: 0.1.0\nlicense: CC0-1.0\nvisibility: external\n"
+        f"source_url: http://x\nsample: {sample}\n{extra}",
+    )
 
 
 def test_sejm_passes():
@@ -87,8 +92,11 @@ def test_pii_pesel_failuje():
 def test_pii_NESTED_messages_failuje():
     """Kluczowe: PII w messages[].content MUSI być wykryte (inaczej false-green na formacie chat)."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","source":"s","messages":[{"role":"user","content":"mój PESEL to 44051401359"}]}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","source":"s","messages":[{"role":"user","content":"mój PESEL to 44051401359"}]}\n',
+        )
         rep = audit(_card(d), STYLE)
         assert any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
@@ -98,11 +106,15 @@ def test_failloud_gdy_brak_tekstu():
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sample.jsonl", '{"id":"a","messages":[{"role":"user","content":"hej"}]}\n')
         (pathlib.Path(d) / "eval_sets").mkdir()
-        _w(d, "eval_sets/hashes.txt", "deadbeef\n")   # żeby decontam realnie wszedł
+        _w(d, "eval_sets/hashes.txt", "deadbeef\n")  # żeby decontam realnie wszedł
         rep = audit(_card(d), V1)  # v1 oczekuje flat 'text'
         assert rep.verdict == "FAIL", rep.to_markdown()
-        assert any(i.check == "pii" and i.level == "error" and "wyłuskało" in i.msg for i in rep.issues), rep.to_markdown()
-        assert any(i.check == "decontam" and i.level == "error" and "wyłuskało" in i.msg for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "pii" and i.level == "error" and "wyłuskało" in i.msg for i in rep.issues), (
+            rep.to_markdown()
+        )
+        assert any(i.check == "decontam" and i.level == "error" and "wyłuskało" in i.msg for i in rep.issues), (
+            rep.to_markdown()
+        )
         assert not any("czyste" in i.msg for i in rep.issues)
 
 
@@ -158,8 +170,15 @@ def _pii_levels(text):
 
 
 def test_pii_natid_etykieta_i_lacznik_failuje():
-    for text in (f"PESEL to {PESEL_OK}", f"PESEL: numer {PESEL_OK}", f"PESEL wynosi {PESEL_ZLA}",
-                 f"PESEL to {PESEL_ZLA}", f"NIP to {NIP_OK}", f"NIP:{NIP_OK}", f"REGON: {REGON14_OK}"):
+    for text in (
+        f"PESEL to {PESEL_OK}",
+        f"PESEL: numer {PESEL_OK}",
+        f"PESEL wynosi {PESEL_ZLA}",
+        f"PESEL to {PESEL_ZLA}",
+        f"NIP to {NIP_OK}",
+        f"NIP:{NIP_OK}",
+        f"REGON: {REGON14_OK}",
+    ):
         assert "error" in _pii_levels(text), text
 
 
@@ -186,8 +205,12 @@ def test_pii_natid_nip_regon_zla_suma_ostrzega():
 
 def test_pii_natid_dlugosc_i_okno_nie_fp():
     """Liczba cyfr spoza typu albo etykieta daleko od numeru → brak trafienia keyword-adjacent."""
-    for text in ("REGON to 2019-2024 r. 123", f"PESEL {PESEL_ZLA}12", "PESEL to 12345 w przykładzie",
-                 "PESEL:" + "\n" * 7 + PESEL_ZLA):
+    for text in (
+        "REGON to 2019-2024 r. 123",
+        f"PESEL {PESEL_ZLA}12",
+        "PESEL to 12345 w przykładzie",
+        "PESEL:" + "\n" * 7 + PESEL_ZLA,
+    ):
         assert _pii_levels(text) == {"info"}, text
 
 
@@ -195,13 +218,19 @@ def test_neardup_wykrywa_fuzzy():
     """neardup (opt-in via formatka): near-identyczne docy (ten sam tekst + doklejony ogon) → warn,
     którego exact `dedup` (sha1) nie łapie."""
     with tempfile.TemporaryDirectory() as d:
-        fmt = _w(d, "fmt.yaml",
-                 "name: t\nversion: 1\ntext_fields: [text]\nid_field: id\n"
-                 "record_schema:\n  fields:\n    text: {type: str, required: true}\n"
-                 "checks: [neardup]\n")
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Ala ma kota i pies biega po ogrodzie wieczorem dnia pierwszego maja roku pomyslnie"}\n'
-           '{"id":"b","text":"Ala ma kota i pies biega po ogrodzie wieczorem dnia pierwszego maja roku pomyslnie dzisiaj"}\n')
+        fmt = _w(
+            d,
+            "fmt.yaml",
+            "name: t\nversion: 1\ntext_fields: [text]\nid_field: id\n"
+            "record_schema:\n  fields:\n    text: {type: str, required: true}\n"
+            "checks: [neardup]\n",
+        )
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Ala ma kota i pies biega po ogrodzie wieczorem dnia pierwszego maja roku pomyslnie"}\n'
+            '{"id":"b","text":"Ala ma kota i pies biega po ogrodzie wieczorem dnia pierwszego maja roku pomyslnie dzisiaj"}\n',
+        )
         rep = audit(_card(d), fmt)
         assert any(i.check == "neardup" and i.level == "warn" for i in rep.issues), rep.to_markdown()
 
@@ -228,8 +257,11 @@ def test_mcq_example_passes():
 def test_pii_nested_options_failuje():
     """PII w options[] (lista STRINGÓW) MUSI być wykryte (mcq nested-aware)."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","question":"pytanie?","options":["ok","mój PESEL to 44051401359"],"answer":0}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","question":"pytanie?","options":["ok","mój PESEL to 44051401359"],"answer":0}\n',
+        )
         rep = audit(_card(d), MCQ)
         assert any(i.check == "pii" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
@@ -243,6 +275,7 @@ def test_md_frontmatter_card_passes():
 def test_cli_resolwuje_format_z_md():
     """CLI dobiera formatkę z pola `format` karty .md (nie domyślne v1)."""
     from dsbench.cli import _resolve_format
+
     md = ROOT / "datasets" / "style-md-example" / "card.md"
     assert _resolve_format(md, None) == "formats/style-sft.yaml"
     assert _resolve_format(md, "formats/v1.yaml") == "formats/v1.yaml"  # explicit ma pierwszeństwo
@@ -251,6 +284,7 @@ def test_cli_resolwuje_format_z_md():
 def test_cli_audit_smoke():
     """Pełna ścieżka CLI (import audit + _run) — łapie zerwane importy, których testy engine nie widzą."""
     from dsbench.cli import main
+
     rc = main(["audit", "--card", str(ROOT / "datasets" / "mcq-example" / "card.yaml"), "--format", str(MCQ)])
     assert rc == 0
 
@@ -258,44 +292,55 @@ def test_cli_audit_smoke():
 def test_license_per_record_restricted_failuje():
     """external + rekord z licencją NC (CC-BY-NC-4.0) → błąd license/data → FAIL."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Pierwszy dokument otwarty.","source":"sejm","license":"CC0-1.0"}\n'
-           '{"id":"b","text":"Drugi dokument niekomercyjny.","source":"lektury","license":"CC-BY-NC-4.0"}\n'
-           '{"id":"c","text":"Trzeci dokument otwarty.","source":"lektury","license":"CC-BY-SA-3.0"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Pierwszy dokument otwarty.","source":"sejm","license":"CC0-1.0"}\n'
+            '{"id":"b","text":"Drugi dokument niekomercyjny.","source":"lektury","license":"CC-BY-NC-4.0"}\n'
+            '{"id":"c","text":"Trzeci dokument otwarty.","source":"lektury","license":"CC-BY-SA-3.0"}\n',
+        )
         rep = audit(_card(d), V1)
         assert rep.verdict == "FAIL", rep.to_markdown()
-        assert any(i.check == "license" and i.level == "error" and i.where == "data"
-                   for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "license" and i.level == "error" and i.where == "data" for i in rep.issues), (
+            rep.to_markdown()
+        )
 
 
 def test_license_per_record_unknown_ostrzega():
     """external + jedna licencja nierozpoznana (Proprietary), reszta otwarta →
     warn license/data, ale BEZ błędu (nierozpoznana sama w sobie nie failuje)."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Dokument otwarty pierwszy.","source":"src-a","license":"CC0-1.0"}\n'
-           '{"id":"b","text":"Dokument o licencji wlasnosciowej.","source":"src-b","license":"Proprietary"}\n'
-           '{"id":"c","text":"Dokument otwarty drugi.","source":"src-a","license":"CC0-1.0"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Dokument otwarty pierwszy.","source":"src-a","license":"CC0-1.0"}\n'
+            '{"id":"b","text":"Dokument o licencji wlasnosciowej.","source":"src-b","license":"Proprietary"}\n'
+            '{"id":"c","text":"Dokument otwarty drugi.","source":"src-a","license":"CC0-1.0"}\n',
+        )
         rep = audit(_card(d), V1)
-        assert any(i.check == "license" and i.level == "warn" and i.where == "data"
-                   for i in rep.issues), rep.to_markdown()
-        assert not any(i.check == "license" and i.level == "error"
-                       for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "license" and i.level == "warn" and i.where == "data" for i in rep.issues), (
+            rep.to_markdown()
+        )
+        assert not any(i.check == "license" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
 
 def test_license_per_record_open_passes():
     """external + rekordy wyłącznie otwarte (CC0/CC-BY-SA) + jeden bez pola licencji →
     brak błędu license, info per-źródło w data, PASS."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Pierwszy otwarty dokument.","source":"biblioteka","license":"CC0-1.0"}\n'
-           '{"id":"b","text":"Drugi otwarty dokument.","source":"archiwum","license":"CC-BY-SA-3.0"}\n'
-           '{"id":"c","text":"Trzeci dokument bez licencji per-rekord."}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Pierwszy otwarty dokument.","source":"biblioteka","license":"CC0-1.0"}\n'
+            '{"id":"b","text":"Drugi otwarty dokument.","source":"archiwum","license":"CC-BY-SA-3.0"}\n'
+            '{"id":"c","text":"Trzeci dokument bez licencji per-rekord."}\n',
+        )
         rep = audit(_card(d), V1)
-        assert not any(i.check == "license" and i.level == "error"
-                       for i in rep.issues), rep.to_markdown()
-        assert any(i.check == "license" and i.level == "info" and i.where == "data"
-                   and "per źródło" in i.msg for i in rep.issues), rep.to_markdown()
+        assert not any(i.check == "license" and i.level == "error" for i in rep.issues), rep.to_markdown()
+        assert any(
+            i.check == "license" and i.level == "info" and i.where == "data" and "per źródło" in i.msg
+            for i in rep.issues
+        ), rep.to_markdown()
         assert rep.verdict == "PASS", rep.to_markdown()
 
 
@@ -303,20 +348,22 @@ def test_license_per_record_dormant_gdy_brak_pola():
     """Rekordy bez pola licencji (styl sejm) pod V1 → ścieżka per-rekord uśpiona:
     brak jakiegokolwiek issue license w data; parasol karty (info license/card) nadal jest."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Zwykly rekord bez licencji.","speaker":"Posel X"}\n'
-           '{"id":"b","text":"Inny rekord bez pola licencji.","speaker":"Posel Y"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Zwykly rekord bez licencji.","speaker":"Posel X"}\n'
+            '{"id":"b","text":"Inny rekord bez pola licencji.","speaker":"Posel Y"}\n',
+        )
         rep = audit(_card(d), V1)
-        assert not any(i.check == "license" and i.where == "data"
-                       for i in rep.issues), rep.to_markdown()
-        assert any(i.check == "license" and i.where == "card"
-                   for i in rep.issues), rep.to_markdown()
+        assert not any(i.check == "license" and i.where == "data" for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "license" and i.where == "card" for i in rep.issues), rep.to_markdown()
         assert rep.verdict == "PASS", rep.to_markdown()
 
 
 def test_is_open_odrzuca_nc_nd():
     """Bugfix: NC/ND NIE są otwarte mimo prefiksu CC-BY; SA/CC0/MIT są otwarte."""
     from dsbench.checks.license import _is_open
+
     assert _is_open("CC-BY-NC-4.0") is False
     assert _is_open("CC-BY-ND-4.0") is False
     assert _is_open("CC-BY-SA-3.0") is True
@@ -329,14 +376,21 @@ def test_license_manifest_nc_failuje():
     src_b→CC-BY-NC-4.0 → efektywna licencja NC pod external → error license/data → FAIL."""
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sources.yaml", "sources:\n  src_a: {license: CC0-1.0}\n  src_b: {license: CC-BY-NC-4.0}\n")
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Pierwszy dokument z wolnego zrodla.","source":"src_a"}\n'
-           '{"id":"b","text":"Drugi dokument z niekomercyjnego zrodla.","source":"src_b"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Pierwszy dokument z wolnego zrodla.","source":"src_a"}\n'
+            '{"id":"b","text":"Drugi dokument z niekomercyjnego zrodla.","source":"src_b"}\n',
+        )
         rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
         assert rep.verdict == "FAIL", rep.to_markdown()
-        assert any(i.check == "license" and i.level == "error" and i.where == "data"
-                   and ("NIE-otwart" in i.msg or "CC-BY-NC" in i.msg)
-                   for i in rep.issues), rep.to_markdown()
+        assert any(
+            i.check == "license"
+            and i.level == "error"
+            and i.where == "data"
+            and ("NIE-otwart" in i.msg or "CC-BY-NC" in i.msg)
+            for i in rep.issues
+        ), rep.to_markdown()
 
 
 def test_license_manifest_unknown_ostrzega():
@@ -344,15 +398,18 @@ def test_license_manifest_unknown_ostrzega():
     BEZ błędu (nierozpoznana per-źródło nie failuje) → PASS."""
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sources.yaml", "sources:\n  src_a: {license: CC0-1.0}\n  src_c: {license: UNKNOWN}\n")
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Dokument z otwartego zrodla.","source":"src_a"}\n'
-           '{"id":"b","text":"Dokument ze zrodla o nieznanej licencji.","source":"src_c"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Dokument z otwartego zrodla.","source":"src_a"}\n'
+            '{"id":"b","text":"Dokument ze zrodla o nieznanej licencji.","source":"src_c"}\n',
+        )
         rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
         assert rep.verdict == "PASS", rep.to_markdown()
-        assert any(i.check == "license" and i.level == "warn" and i.where == "data"
-                   for i in rep.issues), rep.to_markdown()
-        assert not any(i.check == "license" and i.level == "error"
-                       for i in rep.issues), rep.to_markdown()
+        assert any(i.check == "license" and i.level == "warn" and i.where == "data" for i in rep.issues), (
+            rep.to_markdown()
+        )
+        assert not any(i.check == "license" and i.level == "error" for i in rep.issues), rep.to_markdown()
 
 
 def test_license_manifest_rekord_nadpisuje():
@@ -360,14 +417,18 @@ def test_license_manifest_rekord_nadpisuje():
     niesie license: CC0-1.0 → brak błędu; INFO per-źródło pokazuje CC0-1.0 (nie ND)."""
     with tempfile.TemporaryDirectory() as d:
         _w(d, "sources.yaml", "sources:\n  src_b: {license: CC-BY-ND-4.0}\n")
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Rekord z wlasna licencja otwarta.","source":"src_b","license":"CC0-1.0"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"a","text":"Rekord z wlasna licencja otwarta.","source":"src_b","license":"CC0-1.0"}\n',
+        )
         rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
-        assert not any(i.check == "license" and i.level == "error"
-                       for i in rep.issues), rep.to_markdown()
-        info = [i for i in rep.issues
-                if i.check == "license" and i.level == "info" and i.where == "data"
-                and "per źródło" in i.msg]
+        assert not any(i.check == "license" and i.level == "error" for i in rep.issues), rep.to_markdown()
+        info = [
+            i
+            for i in rep.issues
+            if i.check == "license" and i.level == "info" and i.where == "data" and "per źródło" in i.msg
+        ]
         assert info, rep.to_markdown()
         assert "CC0-1.0" in info[0].msg and "ND" not in info[0].msg, info[0].msg
 
@@ -376,20 +437,26 @@ def test_license_manifest_brak_pliku_failuje():
     """Karta wskazuje source_manifest, ale plik nie istnieje → error license/data
     ('source_manifest' + 'brak pliku') → FAIL."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"a","text":"Rekord odwolujacy sie do brakujacego manifestu.","source":"src_a"}\n')
+        _w(d, "sample.jsonl", '{"id":"a","text":"Rekord odwolujacy sie do brakujacego manifestu.","source":"src_a"}\n')
         rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
         assert rep.verdict == "FAIL", rep.to_markdown()
-        assert any(i.check == "license" and i.level == "error" and i.where == "data"
-                   and "source_manifest" in i.msg and "brak pliku" in i.msg
-                   for i in rep.issues), rep.to_markdown()
+        assert any(
+            i.check == "license"
+            and i.level == "error"
+            and i.where == "data"
+            and "source_manifest" in i.msg
+            and "brak pliku" in i.msg
+            for i in rep.issues
+        ), rep.to_markdown()
 
 
 def test_license_manifest_plaski_i_zagniezdzony():
     """Obie formy manifestu — płaska {src: SPDX} ORAZ zagnieżdżona {sources: {src: {license: SPDX}}}
     — dają ten sam wynik: INFO per-źródło wymienia src_a i src_c, verdykt PASS."""
-    data = ('{"id":"a","text":"Dokument z pierwszego zrodla.","source":"src_a"}\n'
-            '{"id":"b","text":"Dokument z trzeciego zrodla.","source":"src_c"}\n')
+    data = (
+        '{"id":"a","text":"Dokument z pierwszego zrodla.","source":"src_a"}\n'
+        '{"id":"b","text":"Dokument z trzeciego zrodla.","source":"src_c"}\n'
+    )
     manifests = {
         "plaski": "src_a: CC0-1.0\nsrc_c: UNKNOWN\n",
         "zagniezdzony": "sources:\n  src_a: {license: CC0-1.0}\n  src_c: {license: UNKNOWN}\n",
@@ -400,14 +467,21 @@ def test_license_manifest_plaski_i_zagniezdzony():
             _w(d, "sample.jsonl", data)
             rep = audit(_card(d, extra="source_manifest: sources.yaml\n"), V1)
             assert rep.verdict == "PASS", f"{wariant}: {rep.to_markdown()}"
-            assert any(i.check == "license" and i.level == "info" and i.where == "data"
-                       and "per źródło" in i.msg and "src_a" in i.msg and "src_c" in i.msg
-                       for i in rep.issues), f"{wariant}: {rep.to_markdown()}"
+            assert any(
+                i.check == "license"
+                and i.level == "info"
+                and i.where == "data"
+                and "per źródło" in i.msg
+                and "src_a" in i.msg
+                and "src_c" in i.msg
+                for i in rep.issues
+            ), f"{wariant}: {rep.to_markdown()}"
 
 
 def test_public_domain_liczy_sie_jako_otwarte():
     """dynaword: 'public-domain (official documents)' (parliamentary/dziennik_ustaw) jest OTWARTE, nie WARN."""
     from dsbench.checks.license import _is_open
+
     assert _is_open("public-domain (official documents)") is True
     assert _is_open("CC-BY-2.5") is True
     assert _is_open("CC-BY-SA-4.0 / Wolna Sztuka 1.3") is True
@@ -415,12 +489,19 @@ def test_public_domain_liczy_sie_jako_otwarte():
 
 def test_loader_parquet_czyta_rekordy():
     """Silnik czyta .parquet (dynaword/HF), nie tylko JSONL — po rozszerzeniu pliku."""
-    import pyarrow as pa, pyarrow.parquet as pq
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
     from dsbench.engine import load_records
+
     with tempfile.TemporaryDirectory() as d:
         p = pathlib.Path(d) / "s.parquet"
-        pq.write_table(pa.table({"id": ["a", "b"], "text": ["abc", "def"],
-                                 "source": ["x", "x"], "license": ["CC-BY-4.0", "CC-BY-4.0"]}), p)
+        pq.write_table(
+            pa.table(
+                {"id": ["a", "b"], "text": ["abc", "def"], "source": ["x", "x"], "license": ["CC-BY-4.0", "CC-BY-4.0"]}
+            ),
+            p,
+        )
         recs = load_records(str(p))
         assert [r["id"] for r in recs] == ["a", "b"]
         assert recs[0]["text"] == "abc" and recs[0]["license"] == "CC-BY-4.0"
@@ -428,11 +509,22 @@ def test_loader_parquet_czyta_rekordy():
 
 def test_audit_parquet_data_path_passes():
     """Audyt z --data wskazującym .parquet (external, licencja otwarta per-dok) → PASS."""
-    import pyarrow as pa, pyarrow.parquet as pq
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
     with tempfile.TemporaryDirectory() as d:
         p = pathlib.Path(d) / "data.parquet"
-        pq.write_table(pa.table({"id": ["a"], "text": ["Neutralny tekst encyklopedyczny."],
-                                 "source": ["wikipedia"], "license": ["CC-BY-SA-3.0"]}), p)
+        pq.write_table(
+            pa.table(
+                {
+                    "id": ["a"],
+                    "text": ["Neutralny tekst encyklopedyczny."],
+                    "source": ["wikipedia"],
+                    "license": ["CC-BY-SA-3.0"],
+                }
+            ),
+            p,
+        )
         rep = audit(_card(d), V1, data_path=str(p))
         assert rep.verdict == "PASS", rep.to_markdown()
 
@@ -447,9 +539,12 @@ def test_dynaword_sample_passes():
 def test_boilerplate_hard_ostrzega():
     """web-boilerplate HARD (linia 'Odpowiedz Usuń' = comment-cruft) → warn boilerplate/data."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"1","text":"To jest artykul o Warszawie i jej historii.\\nOdpowiedz Usun","license":"CC0-1.0"}\n'
-           '{"id":"2","text":"Zupelnie normalny tekst po polsku bez smieci.","license":"CC0-1.0"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"1","text":"To jest artykul o Warszawie i jej historii.\\nOdpowiedz Usun","license":"CC0-1.0"}\n'
+            '{"id":"2","text":"Zupelnie normalny tekst po polsku bez smieci.","license":"CC0-1.0"}\n',
+        )
         rep = audit(_card(d), V1)
         assert any(i.check == "boilerplate" and i.level == "warn" for i in rep.issues), rep.to_markdown()
 
@@ -458,10 +553,13 @@ def test_boilerplate_proza_bez_fp():
     """FP-safe: proza ze słowami markerów WEWNĄTRZ zdania (nie jako osobna linia) → BRAK warn.
     Łapie regresję do naiwnego substring-matchu (który by tu FP-nął na 'dodaję komentarze')."""
     with tempfile.TemporaryDirectory() as d:
-        _w(d, "sample.jsonl",
-           '{"id":"1","text":"Subskrybuje te gazete od lat i dodaje komentarze do artykulow.","license":"CC0-1.0"}\n'
-           '{"id":"2","text":"Subskrybuj: W markecie budowlanym Obi kupilem nowe paski do przyczepy.","license":"CC0-1.0"}\n'
-           '{"id":"3","text":"Warszawa jest stolica Polski nad Wisla.","license":"CC0-1.0"}\n')
+        _w(
+            d,
+            "sample.jsonl",
+            '{"id":"1","text":"Subskrybuje te gazete od lat i dodaje komentarze do artykulow.","license":"CC0-1.0"}\n'
+            '{"id":"2","text":"Subskrybuj: W markecie budowlanym Obi kupilem nowe paski do przyczepy.","license":"CC0-1.0"}\n'
+            '{"id":"3","text":"Warszawa jest stolica Polski nad Wisla.","license":"CC0-1.0"}\n',
+        )
         rep = audit(_card(d), V1)
         assert not any(i.check == "boilerplate" and i.level == "warn" for i in rep.issues), rep.to_markdown()
 

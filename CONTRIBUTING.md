@@ -43,7 +43,7 @@ Pola rekordu definiuje formatka (`formats/v1.yaml` → `record_schema`).
 dsbench audit --card datasets/<nazwa>/card.yaml --format formats/v1.yaml
 ```
 Kod wyjścia `0` = PASS, `1` = FAIL.
-Gdy zmieniasz kod silnika: `uv run --with pytest python -m pytest tests pipeline/tests` (sprawdzone na uv 0.13.9).
+Gdy zmieniasz kod silnika: `uv sync`, potem `uv run pytest` oraz `uv run ruff check . && uv run ruff format --check .` (albo raz `uv run pre-commit install`, wtedy ruff rusza przy każdym commicie). Sprawdzone na uv 0.13.9.
 
 ## 5. PR
 Otwórz PR. CI odpali **ten sam** audyt + testy silnika. Uzupełnij checklistę z szablonu PR.

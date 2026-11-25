@@ -2,7 +2,12 @@
 """Batch register-gold: losowe CZYSTE (nie-kwarantanna) doce -> pytanie o REJESTR (human-gold do walidacji
 klasyfikatora e5 na prawdzie, nie silver). Pelny tekst do 1500 zn.
 Uzycie: python gen_register_gold.py <numer> [N]"""
-import sys, json, random, pyarrow.parquet as pq
+
+import json
+import random
+import sys
+
+import pyarrow.parquet as pq
 from garbage_rules import detect
 from paths import EVAL_SETS, data_root, notes_dir
 
@@ -14,34 +19,38 @@ random.seed(int(BATCH) + 500)
 pf = pq.ParquetFile(SLICE)
 keepers = []
 for rg in range(pf.num_row_groups):
-    if len(keepers) >= N*6: break
-    t = pf.read_row_group(rg, columns=["text","document_id"])
+    if len(keepers) >= N * 6:
+        break
+    t = pf.read_row_group(rg, columns=["text", "document_id"])
     for txt, did in zip(t.column("text").to_pylist(), t.column("document_id").to_pylist()):
         q, s = detect(txt or "")
-        if not q and len(txt or "") > 300:          # czyste (nie-kill), sensownej dlugosci
+        if not q and len(txt or "") > 300:  # czyste (nie-kill), sensownej dlugosci
             keepers.append((did, txt))
 random.shuffle(keepers)
 picked = keepers[:N]
 
-md = [f"# Register-gold partia {BATCH} — jaki REJESTR?",
-      "", f"{len(picked)} czystych fragmentów (bez śmieci). **Dla każdego wpisz `rejestr:` JEDNO:**",
-      "",
-      "| id | co to |",
-      "|---|---|",
-      "| `news` | wiadomości, dziennikarstwo, relacje |",
-      "| `howto` | poradnik, instrukcja, przepis, krok-po-kroku |",
-      "| `qa` | pytania-odpowiedzi, FAQ, forum Q&A |",
-      "| `dialog` | rozmowa, komentarze konwersacyjne |",
-      "| `literacki` | proza, poezja, narracja, beletrystyka |",
-      "| `nauka` | naukowe, popularnonaukowe, techniczno-wyjaśniające |",
-      "| `encyklopedyczny` | hasła, definicje, reference |",
-      "| `opinie` | recenzje, publicystyka oceniająca |",
-      "| `legal` | prawne, urzędowe, regulaminy, akty |",
-      "| `web-inne` | sensowny web nie pasujący wyżej |",
-      "",
-      "- jeśli mimo wszystko to śmieć — wpisz `usuń`",
-      "- po rejestrze dopisz cokolwiek (wątpliwość, druga możliwość)",
-      ""]
+md = [
+    f"# Register-gold partia {BATCH} — jaki REJESTR?",
+    "",
+    f"{len(picked)} czystych fragmentów (bez śmieci). **Dla każdego wpisz `rejestr:` JEDNO:**",
+    "",
+    "| id | co to |",
+    "|---|---|",
+    "| `news` | wiadomości, dziennikarstwo, relacje |",
+    "| `howto` | poradnik, instrukcja, przepis, krok-po-kroku |",
+    "| `qa` | pytania-odpowiedzi, FAQ, forum Q&A |",
+    "| `dialog` | rozmowa, komentarze konwersacyjne |",
+    "| `literacki` | proza, poezja, narracja, beletrystyka |",
+    "| `nauka` | naukowe, popularnonaukowe, techniczno-wyjaśniające |",
+    "| `encyklopedyczny` | hasła, definicje, reference |",
+    "| `opinie` | recenzje, publicystyka oceniająca |",
+    "| `legal` | prawne, urzędowe, regulaminy, akty |",
+    "| `web-inne` | sensowny web nie pasujący wyżej |",
+    "",
+    "- jeśli mimo wszystko to śmieć — wpisz `usuń`",
+    "- po rejestrze dopisz cokolwiek (wątpliwość, druga możliwość)",
+    "",
+]
 recs = []
 for i, (did, txt) in enumerate(picked, 1):
     md.append(f"## {i}.")
@@ -51,7 +60,7 @@ for i, (did, txt) in enumerate(picked, 1):
     recs.append({"id": did, "text": txt, "rejestr": ""})
 mdp = notes_dir() / f"register-gold-partia-{BATCH}.md"
 jlp = EVAL_SETS / f"register-gold-partia-{BATCH}.jsonl"
-open(mdp,"w",encoding="utf-8").write("\n".join(md))
-open(jlp,"w",encoding="utf-8").write("\n".join(json.dumps(r,ensure_ascii=False) for r in recs))
+open(mdp, "w", encoding="utf-8").write("\n".join(md))
+open(jlp, "w", encoding="utf-8").write("\n".join(json.dumps(r, ensure_ascii=False) for r in recs))
 print(f"register-gold {BATCH}: {len(picked)} czystych doców")
 print(f"  MD -> {mdp}")

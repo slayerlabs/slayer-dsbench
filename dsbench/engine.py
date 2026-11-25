@@ -1,11 +1,14 @@
 """Orkiestrator: ładuje formatkę (schema + lista checków po ID) i odpala. ZERO nazw pól w kodzie."""
+
 from __future__ import annotations
+
 import json
 import pathlib
-from .models import Issue, Ctx, Report
-from .schema import load_yaml, load_card, validate_declarative
-from . import registry
+
 from . import checks as _checks  # noqa: F401  (import rejestruje checki)
+from . import registry
+from .models import Ctx, Issue, Report
+from .schema import load_card, load_yaml, validate_declarative
 
 
 def load_records(path) -> list:
@@ -20,7 +23,7 @@ def load_records(path) -> list:
             try:
                 recs.append(json.loads(ln))
             except Exception as e:
-                recs.append({"__parse_error__": f"linia {n+1}: {e}"})
+                recs.append({"__parse_error__": f"linia {n + 1}: {e}"})
     return recs
 
 
@@ -66,8 +69,13 @@ def audit(card_path, format_path, data_path=None, schema_only=False) -> Report:
 
     # 4. checki proceduralne wg LISTY w formatce (po ID z rejestru)
     if not schema_only:
-        ctx = Ctx(card=card, formatka=fmt, records=records,
-                  data_path=str(rec_path) if rec_path else None, root=card_path.parent)
+        ctx = Ctx(
+            card=card,
+            formatka=fmt,
+            records=records,
+            data_path=str(rec_path) if rec_path else None,
+            root=card_path.parent,
+        )
         for cid in fmt.get("checks", []):
             try:
                 issues += registry.get(cid)(ctx)

@@ -7,6 +7,7 @@ Dzięki temu checki nie dają FAŁSZYWEGO ZIELONEGO na formatach chat/mcq/nested
   "options[]"          → lista stringów (każdy element)
   "messages[].content" → lista dictów (pole `content` każdego elementu)
 """
+
 from __future__ import annotations
 
 
@@ -22,18 +23,18 @@ def texts(rec: dict, fmt: dict) -> list:
     """Zwraca listę stringów tekstu z rekordu wg specyfikacji formatki."""
     out = []
     for spec in _specs(fmt):
-        if "[]." in spec:                      # lista dictów: base[].sub
+        if "[]." in spec:  # lista dictów: base[].sub
             base, sub = spec.split("[].", 1)
             arr = rec.get(base)
             if isinstance(arr, list):
                 for it in arr:
                     if isinstance(it, dict) and isinstance(it.get(sub), str):
                         out.append(it[sub])
-        elif spec.endswith("[]"):              # lista stringów: base[]
+        elif spec.endswith("[]"):  # lista stringów: base[]
             arr = rec.get(spec[:-2])
             if isinstance(arr, list):
                 out += [x for x in arr if isinstance(x, str)]
-        else:                                  # pole płaskie
+        else:  # pole płaskie
             v = rec.get(spec)
             if isinstance(v, str):
                 out.append(v)

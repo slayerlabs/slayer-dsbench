@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Lekki PII-check (sample) na zbudowanym 8x3b: liczy surowe e-maile/telefony/PESEL POZA placeholderami
 zrodla ([PII],[Telefon]). Nie blokuje (karta: audyt PII po stronie odbiorcy) - raportuje skale."""
-import glob, re, json
+
+import glob
+import json
+import re
+
 import pyarrow.parquet as pq
 from paths import data_root
 
@@ -10,15 +14,22 @@ PHONE = re.compile(r"(?<!\d)(?:\+48\s?)?(?:\d[ -]?){9}(?!\d)")
 PESEL = re.compile(r"(?<!\d)\d{11}(?!\d)")
 N_PER = 20000
 
+
 def scan(path):
     n = e = ph = pe = 0
     for b in pq.ParquetFile(path).iter_batches(batch_size=5000, columns=["text"]):
         for t in b.column("text").to_pylist():
-            if n >= N_PER: break
-            n += 1; t = t or ""
-            e += len(EMAIL.findall(t)); ph += len(PHONE.findall(t)); pe += len(PESEL.findall(t))
-        if n >= N_PER: break
+            if n >= N_PER:
+                break
+            n += 1
+            t = t or ""
+            e += len(EMAIL.findall(t))
+            ph += len(PHONE.findall(t))
+            pe += len(PESEL.findall(t))
+        if n >= N_PER:
+            break
     return {"probka": n, "email": e, "telefon": ph, "pesel_like": pe}
+
 
 if __name__ == "__main__":
     DS = str(data_root() / "slayer-pl-8x3b")
