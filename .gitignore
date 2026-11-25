@@ -6,3 +6,6 @@ build/
 dist/
 .venv/
 *.tmp
+.venv-przed/
+.ruff_cache/
+uv-cache/

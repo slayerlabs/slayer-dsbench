@@ -2,29 +2,43 @@ name: dsbench validate
 
 on:
   pull_request:
-    paths: ["datasets/**", "formats/**", "dsbench/**", "pyproject.toml"]
+    paths: ["datasets/**", "formats/**", "dsbench/**", "tests/**", "pipeline/**", "pyproject.toml", "uv.lock", ".github/workflows/**"]
   push:
     branches: [main]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.13.9"
+      - name: Środowisko z lockfile (zależności + grupa dev)
+        run: uv sync --locked
+      - name: Ruff (lint)
+        run: uv run ruff check .
+      - name: Ruff (format)
+        run: uv run ruff format --check .
+
   audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10
         with:
-          python-version: "3.11"
+          version: "0.13.9"
       - name: Instalacja (rdzeń = ten sam silnik co lokalnie, S3)
-        run: pip install -e .
+        run: uv sync --locked --python 3.11
       - name: Testy silnika
-        run: python tests/test_dsbench.py
+        run: uv run pytest
       - name: Audyt kart datasetów (bramka; formatka z pola `format` karty; card.yaml + card.md)
         run: |
           set -e
           fail=0
           for card in $(find datasets \( -name card.yaml -o -name card.md \)); do
             echo "::group::$card"
-            dsbench audit --card "$card" || fail=1
+            uv run dsbench audit --card "$card" || fail=1
             echo "::endgroup::"
           done
           exit $fail

@@ -2,15 +2,52 @@
 name = "slayer-dsbench"
 version = "0.1.0"
 description = "Bramka CI + formatka do walidacji datasetów (schema-agnostyczna)"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["pyyaml>=6", "pyarrow>=15"]
 
 [project.scripts]
 dsbench = "dsbench.cli:main"
 
-[build-system]
-requires = ["setuptools>=61"]
-build-backend = "setuptools.build_meta"
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff==0.17.6",
+    "pre-commit>=4",
+]
 
-[tool.setuptools]
-packages = ["dsbench", "dsbench.checks"]
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# Pakiet `dsbench` leży w korzeniu repo (bez src/), nazwa dystrybucji różni się od nazwy modułu.
+module-name = "dsbench"
+module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+# Dane i kopie eval-setów to nie kod; formatowanie nie może zmienić ich bajtów ani sum kontrolnych.
+extend-exclude = ["datasets", "eval_sets"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+# Świadome wyjątki: poprawka zmieniłaby zachowanie albo nazwy w istniejącym kodzie, nie sam styl.
+ignore = [
+    "B905",   # zip() bez strict=: dodanie strict=True rzuca wyjątek przy różnych długościach
+    "E741",   # nazwy l/I/O w istniejących skryptach pipeline
+    "E731",   # lambdy przypisane do nazw
+    "UP031",  # formatowanie przez %
+    "E501",   # długie linie w napisach i regexach, których formatter nie łamie
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Kolejność importów = kolejność rejestracji checków (i kolejność w raporcie audytu).
+"dsbench/checks/__init__.py" = ["I001", "E401"]
+# Skrypty pipeline/ i testy ustawiają sys.path przed importem modułów projektu.
+"pipeline/**" = ["E402"]
+"tests/**" = ["E402"]

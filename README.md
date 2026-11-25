@@ -113,7 +113,11 @@ Skopiuj katalog `dsbench/` do docelowego repo jako narzędzie (bez osobnego paki
 ## Dane i integralność
 Repo trzyma **kartę + `source_url` + próbkę**, nie surowe dane (duże/poufne). `sha256` wykrywa podmianę. `visibility: internal` → CI nie pobiera pełnych danych. Eval-sety trzymane jako **hashe**.
 
-## Testy
+## Testy i styl
 ```bash
-python tests/test_dsbench.py     # bez pytest; kryteria S1 (modularność) / S2 (integralność) / S3 (spójność CI↔lokalnie)
+uv sync                          # środowisko z uv.lock: zależności + grupa dev (pytest, ruff, pre-commit)
+uv run pytest                    # kryteria S1 (modularność) / S2 (integralność) / S3 (spójność CI↔lokalnie)
+uv run ruff check . && uv run ruff format --check .
+uv run pre-commit install        # raz: ruff + podstawowe hooki przy każdym commicie (datasets/ i eval_sets/ wyłączone)
 ```
+Build: backend `uv_build` (`uv build`), konfiguracja ruff i pytest w `pyproject.toml`. CI uruchamia to samo z `uv sync --locked`.
