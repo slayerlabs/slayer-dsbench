@@ -5,8 +5,12 @@ reconcile z Wartownika ~78k substring-union vs moje 53k line-level.
 Usage: python build_clean_parquet.py [OUT.parquet]
 """
 
-import sys, time, re
-import pyarrow as pa, pyarrow.parquet as pq
+import re
+import sys
+import time
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 sys.path.insert(0, r"C:/tmp/dsbench-monter")
 from dsbench.checks.boilerplate import _classify

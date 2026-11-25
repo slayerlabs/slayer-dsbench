@@ -14,7 +14,9 @@ Gdy formatka nie wskazuje `license_field` albo rekordy go nie niosą → obowią
 (pełna wsteczna zgodność — dawne datasety bez zmian)."""
 
 from __future__ import annotations
+
 from collections import Counter, defaultdict
+
 from ..models import Issue
 from ..registry import check
 from ..schema import load_yaml

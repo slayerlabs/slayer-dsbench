@@ -3,14 +3,15 @@
 Bez LM Studio (WSL go nie widzi). Apple-to-apple z baseline TF-IDF (5-fold CV, MIN_N=8).
 Model: intfloat/multilingual-e5-base (prefix 'passage: '). Uzycie: python register_embed_local.py"""
 
-import json, numpy as np
+import json
 from collections import Counter
+
+import numpy as np
+from paths import EVAL_SETS
 from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, f1_score, precision_recall_fscore_support
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
-from sklearn.metrics import f1_score, precision_recall_fscore_support, classification_report
-
-from paths import EVAL_SETS
 
 PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 MODEL = "intfloat/multilingual-e5-base"
@@ -33,7 +34,7 @@ clf = lambda: LogisticRegression(max_iter=4000, class_weight="balanced", C=10.0)
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 yp = cross_val_predict(clf(), X, y, cv=skf)
 macro = f1_score(y, yp, average="macro")
-print(f"\n=== EMBED-LOCAL (multilingual-e5-base)+logreg 5-fold CV ===")
+print("\n=== EMBED-LOCAL (multilingual-e5-base)+logreg 5-fold CV ===")
 print(f"macro-F1(pooled) = {macro:.3f}")
 print(classification_report(y, yp, digits=3, zero_division=0))
 labs = sorted(keep)

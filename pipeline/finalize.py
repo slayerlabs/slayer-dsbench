@@ -2,8 +2,12 @@
 """Finalize slayer-pl-8x3b: manifesty (sha256 + tokeny + rozklad rejestrow + SA), sample.jsonl,
 aktualizacja dataset.json. Uruchamiane po assemble.py (wszystkie parquet istnieja)."""
 
-import glob, os, json, hashlib, time
+import hashlib
+import json
+import os
+import time
 from collections import Counter
+
 import pyarrow.parquet as pq
 from paths import data_root
 

@@ -2,7 +2,6 @@
 """Push slayer-pl-8x3b -> SlayerLab/slayer-pl-8x3b. Resumowalny upload_folder.
 Nowe repo zakladane jako prywatne; widocznosci istniejacego repo skrypt nie zmienia."""
 
-import sys
 from huggingface_hub import HfApi, create_repo
 from paths import data_root
 

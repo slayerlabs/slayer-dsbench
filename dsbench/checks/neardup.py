@@ -6,7 +6,9 @@ Czysto-python (hashlib blake2b + trik (a·h+b) mod p), zero zależności ponad s
 Skanuje wyłuskany tekst (nested-aware). Na pełnych blobach podawaj sample/shard (jak reszta dsbench)."""
 
 from __future__ import annotations
+
 import hashlib
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts

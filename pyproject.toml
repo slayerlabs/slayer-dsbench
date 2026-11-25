@@ -46,8 +46,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Kolejność importów = kolejność rejestracji checków (i kolejność w raporcie audytu).
-"dsbench/checks/__init__.py" = ["I001", "E401"]
+# Kolejność importów = kolejność rejestracji checków (i kolejność w raporcie audytu); import służy rejestracji.
+"dsbench/checks/__init__.py" = ["I001", "E401", "F401"]
 # Skrypty pipeline/ i testy ustawiają sys.path przed importem modułów projektu.
 "pipeline/**" = ["E402"]
 "tests/**" = ["E402"]

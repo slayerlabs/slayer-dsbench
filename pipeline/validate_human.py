@@ -3,12 +3,13 @@
 Rozstrzyga czy klasyfikator jest realnie dobry czy powiela auto-labeler.
 Uzycie: python validate_human.py <porownanie.json>  (lista rekordow z polami text, human, opus)"""
 
-import sys, json, numpy as np
+import json
+import sys
 from collections import Counter
-from sentence_transformers import SentenceTransformer
-from sklearn.linear_model import LogisticRegression
 
 from paths import EVAL_SETS
+from sentence_transformers import SentenceTransformer
+from sklearn.linear_model import LogisticRegression
 
 SILVER = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 if len(sys.argv) < 2:
@@ -58,5 +59,5 @@ for i, (h, o, e) in enumerate(rows, 1):
     flag = "" if (o == h and e == h) else ("  <e5≠h" if e != h else "") + ("  <opus≠h" if o != h else "")
     print(f"{i:2} {h:16} | {o:16} | {e:16}{flag}")
 print("\n--- 'info' (klasyfikator nie zna tej klasy - jak zmapowal): ---")
-for h, o, e in info:
+for _h, o, e in info:
     print(f"   human=info -> opus={o}, e5={e}")

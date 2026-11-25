@@ -6,6 +6,7 @@ Broni kontraktu detektorów (empiria polish-dynaword, smoke-verified 2026-08-06)
   STRUKTURALNE (warn, FP-prone): mid-word '?' — ostrzeżenie, NIE error (osądź próbką)."""
 
 from __future__ import annotations
+
 import pathlib
 import sys
 import tempfile

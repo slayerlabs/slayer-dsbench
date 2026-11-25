@@ -5,6 +5,7 @@ FP-safe labels (kombinat/komora), bounded-fixpoint convergent. Bateria = klasy z
 """
 
 from __future__ import annotations
+
 import pathlib
 import re
 import sys

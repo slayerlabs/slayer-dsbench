@@ -4,11 +4,18 @@ Per-slice checkpoint: web-slice-{i}.tagged.parquet; pomija juz zrobione (restart
 Memory-bounded: iter_batches, embed batchami, ParquetWriter w finally.
 Slice'y 0-7 (8 packow); 8-9 rezerwa (nietagowane)."""
 
-import os, json, re, time, numpy as np
-import pyarrow as pa, pyarrow.parquet as pq
-from garbage_rules import detect
+import json
+import os
+import re
+import time
+
 import e5_gpu
-from paths import EVAL_SETS as ES, data_root
+import numpy as np
+import pyarrow as pa
+import pyarrow.parquet as pq
+from garbage_rules import detect
+from paths import EVAL_SETS as ES
+from paths import data_root
 
 Z = np.load(ES / "logreg_coef.npz", allow_pickle=False)
 COEF, INTER, CLASSES = Z["coef"], Z["intercept"], Z["classes"].astype(str)

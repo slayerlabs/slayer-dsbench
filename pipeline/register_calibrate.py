@@ -4,13 +4,14 @@ Cel: czyste partycje — dla kazdego rejestru znajdz prog proby tau, przy ktorym
 i policz coverage (jaki % rekordow danego rejestru zostaje). Bez leakage (cross_val_predict proba).
 Actionable dla mixu: ile diverse per-rejestr wyciagniemy z web przy czystosci >=0.90."""
 
-import json, numpy as np
+import json
 from collections import Counter
+
+import numpy as np
+from paths import EVAL_SETS
 from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
-
-from paths import EVAL_SETS
 
 PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 MODEL = "intfloat/multilingual-e5-base"

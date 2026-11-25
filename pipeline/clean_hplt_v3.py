@@ -10,12 +10,20 @@ Pola v3: text, lang[list], prob[list], u(url), doc_scores[list], web-register{di
 """
 
 from __future__ import annotations
-import argparse, json, os, re, sys, time
+
+import argparse
+import json
+import os
+import re
+import sys
+import time
 from pathlib import Path
 from urllib.parse import urlparse
-import zstandard as zstd
-import pyarrow as pa, pyarrow.parquet as pq
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 import tiktoken
+import zstandard as zstd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # local pipeline modules
 import phone_scrub

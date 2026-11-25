@@ -4,11 +4,14 @@ zastosuj per-rejestr confidence-threshold (calibrate-register-e5.json) -> CZYSTE
 + reszta -> kwarantanna 'niepewne'. Raport realnych wolumenow per-rejestr na faktycznym web.
 Dowod pipeline + liczby dla decyzji mixu. NIE full-24B (to GPU + go Arka). Uzycie: python register_tag_pilot.py [N]"""
 
-import sys, json, numpy as np, pyarrow.parquet as pq, pyarrow as pa
+import json
+import sys
 from collections import Counter
+
+import pyarrow.parquet as pq
+from paths import DATASETS, EVAL_SETS, data_root
 from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
-from paths import DATASETS, EVAL_SETS, data_root
 
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
 SILVER = EVAL_SETS / "hplt-register-silver-v1.jsonl"

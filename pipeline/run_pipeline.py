@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """run_pipeline.py — MODULARNY, ROZSZERZALNY pipeline HPLT->dataset (jeden bin, jedna komenda).
 Composuje niezalezne, reuzywalne kroki (kazdy = osobny modul/skrypt):
   KROK 1  clean_hplt_v3.py   : fetch(raw HPLT bin) -> filtry(lang/MT/register/len/boilerplate/adult/mojibake/domain)
@@ -10,7 +9,10 @@ Rozszerzalnosc: nowy bin = --bin 8_1|7_1|... ; nowe zrodlo = --url ; nowy krok =
 Modularnosc: kazdy krok wolany jako osobny proces (mozna uzyc/testowac samodzielnie); wspolny kontrakt = parquet(kanoniczna schema).
 """
 
-import argparse, subprocess, sys, time
+import argparse
+import subprocess
+import sys
+import time
 from pathlib import Path
 
 PY = sys.executable

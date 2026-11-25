@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Wartownik post-batch DEEP-VERIFY (independent PII-safety gate, 2-arbiter).
 Lens NIEZALEZNY od pipeline-scruba: (1) idempotency-residual (re-run scrub_fix = 0?),
 (2) broad-independent phone-leak-scan (inny regex, DATE/IBAN/token-excluded, samples->human-judgment),
@@ -7,9 +6,12 @@ independent-lens dla misses. date-excluded (lekcja: date-contamination Monter/La
 Uzycie: python deep_verify.py <parquet>...   (albo glob-dir)
 """
 
-import sys, re, glob
-import pyarrow.parquet as pq
+import glob
 import os
+import re
+import sys
+
+import pyarrow.parquet as pq
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # local pipeline dir
 import phone_scrub as M

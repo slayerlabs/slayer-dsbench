@@ -2,8 +2,10 @@
 FAIL-LOUD: gdy nic nie wyłuskano, OSTRZEGA (nie raportuje „0 nakładek" w próżni)."""
 
 from __future__ import annotations
+
 import hashlib
 import pathlib
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts

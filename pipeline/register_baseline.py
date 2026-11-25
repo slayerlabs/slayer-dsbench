@@ -5,15 +5,17 @@ TF-IDF + LogisticRegression, stratified 5-fold CV. Raportuje macro-F1 (±95% CI 
 Uzycie: python register_baseline.py [sciezka.jsonl]
 """
 
-import sys, json, numpy as np
+import json
+import sys
 from collections import Counter
+
+import numpy as np
+from paths import EVAL_SETS
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report, f1_score, precision_recall_fscore_support
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
-from sklearn.metrics import f1_score, precision_recall_fscore_support, classification_report
-
-from paths import EVAL_SETS
+from sklearn.pipeline import Pipeline
 
 PATH = sys.argv[1] if len(sys.argv) > 1 else EVAL_SETS / "hplt-register-silver-v1.jsonl"
 GATE = {"dialog", "qa", "howto", "nauka", "literacki"}  # rejestry bramkowane (precision>=0.90 target)
@@ -50,7 +52,7 @@ def mkpipe():
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 yp = cross_val_predict(mkpipe(), Xk, yk, cv=skf)
 macro = f1_score(yk, yp, average="macro")
-print(f"\n=== BASELINE TF-IDF+logreg (5-fold CV) ===")
+print("\n=== BASELINE TF-IDF+logreg (5-fold CV) ===")
 print(f"macro-F1(pooled) = {macro:.3f}")
 print(classification_report(yk, yp, digits=3, zero_division=0))
 

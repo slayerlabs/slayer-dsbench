@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """drop_docs.py — usun docs po doc-id (kolumna 'id') z listy Wartownika (A-prim drop-gate).
 STREAMING (iter_batches), out-of-place (--outdir, zero os.replace = brak Windows-AV-lock).
 Drop-lista = plik z jednym doc-id na linie (kolumna 'id' parquetu). Terminal-krok po b2:
@@ -6,10 +5,14 @@ kazdy flagowany doc (real+FP, mechanicznie) -> drop -> final b2 = leak/idem/mang
 Uzycie: python drop_docs.py --parquet <path> --dropids <file> --outdir <dir>
 """
 
-import argparse, os, sys, time
+import argparse
+import os
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import pyarrow as pa, pyarrow.parquet as pq
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 
 def main():

@@ -2,7 +2,10 @@
 """Lekki PII-check (sample) na zbudowanym 8x3b: liczy surowe e-maile/telefony/PESEL POZA placeholderami
 zrodla ([PII],[Telefon]). Nie blokuje (karta: audyt PII po stronie odbiorcy) - raportuje skale."""
 
-import glob, re, json
+import glob
+import json
+import re
+
 import pyarrow.parquet as pq
 from paths import data_root
 

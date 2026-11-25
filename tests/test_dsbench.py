@@ -1,6 +1,7 @@
 """Testy dsbench — kryteria S1/S2/S3 + higiena + kompatybilność chat/nested (messages[])."""
 
 from __future__ import annotations
+
 import hashlib
 import json
 import pathlib
@@ -488,7 +489,9 @@ def test_public_domain_liczy_sie_jako_otwarte():
 
 def test_loader_parquet_czyta_rekordy():
     """Silnik czyta .parquet (dynaword/HF), nie tylko JSONL — po rozszerzeniu pliku."""
-    import pyarrow as pa, pyarrow.parquet as pq
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
     from dsbench.engine import load_records
 
     with tempfile.TemporaryDirectory() as d:
@@ -506,7 +509,8 @@ def test_loader_parquet_czyta_rekordy():
 
 def test_audit_parquet_data_path_passes():
     """Audyt z --data wskazującym .parquet (external, licencja otwarta per-dok) → PASS."""
-    import pyarrow as pa, pyarrow.parquet as pq
+    import pyarrow as pa
+    import pyarrow.parquet as pq
 
     with tempfile.TemporaryDirectory() as d:
         p = pathlib.Path(d) / "data.parquet"

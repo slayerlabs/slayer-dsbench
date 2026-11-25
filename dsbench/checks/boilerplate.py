@@ -14,7 +14,9 @@ nie działa (nie ufamy samej korpus-metryce; emisja przed/po = domknięcie, mier
 """
 
 from __future__ import annotations
+
 import re
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts

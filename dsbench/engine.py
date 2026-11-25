@@ -1,12 +1,14 @@
 """Orkiestrator: ładuje formatkę (schema + lista checków po ID) i odpala. ZERO nazw pól w kodzie."""
 
 from __future__ import annotations
+
 import json
 import pathlib
-from .models import Issue, Ctx, Report
-from .schema import load_yaml, load_card, validate_declarative
-from . import registry
+
 from . import checks as _checks  # noqa: F401  (import rejestruje checki)
+from . import registry
+from .models import Ctx, Issue, Report
+from .schema import load_card, load_yaml, validate_declarative
 
 
 def load_records(path) -> list:

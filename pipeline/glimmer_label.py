@@ -3,7 +3,10 @@
 meta/muse-glimmer = model BAZOWY -> /v1/completions few-shot (NIE chat). Mierzy zgodnosc glimmer-vs-opus
 na silver-v1 zanim zaufamy mu na bulk train-set. Uzycie: python glimmer_label.py [n]"""
 
-import sys, json, urllib.request, random
+import json
+import random
+import sys
+import urllib.request
 from collections import Counter, defaultdict
 
 from paths import EVAL_SETS

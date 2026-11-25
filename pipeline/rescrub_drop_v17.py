@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """rescrub_drop_v17.py — v17 re-scrub in-place + DROP docs z mangle. STREAMING (row-group).
 FCD-R7 lekcja ZASTOSOWANA: iter_batches + ParquetWriter -> RAM staly ~batch (NIE read_table calego
 pliku = 8GB Arrow/worker). v17 domyka foreign-14/dual-slash (LEAKI, numery obecne -> re-scrub lapie);
@@ -6,11 +5,16 @@ mangle (cyfry zjedzone) -> DROP (re-scrub nie przywroci). Temp+rename (atomowy).
 Uzycie: python rescrub_drop_v17.py --parquet <path> [--max-pii-frac 0.02] [--batch 20000]
 """
 
-import argparse, os, re, sys, time
+import argparse
+import os
+import re
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import pyarrow as pa, pyarrow.parquet as pq
 import clean_hplt_v3 as C
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 MANGLE = re.compile(r"\[Telefon\][-\d]|\d\[Telefon\]")
 

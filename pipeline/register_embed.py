@@ -3,13 +3,15 @@
 Embeddings z :1234 (LM Studio, text-embedding-nomic-embed-text-v1.5). Bez glimmera (thinking-model, nieuzywalny).
 Uzycie: python register_embed.py"""
 
-import json, urllib.request, numpy as np
+import json
+import urllib.request
 from collections import Counter
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold, cross_val_predict
-from sklearn.metrics import f1_score, precision_recall_fscore_support, classification_report
 
+import numpy as np
 from paths import EVAL_SETS
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, f1_score, precision_recall_fscore_support
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
 PATH = EVAL_SETS / "hplt-register-silver-v1.jsonl"
 URL = "http://127.0.0.1:1234/v1/embeddings"
@@ -46,7 +48,7 @@ clf = lambda: LogisticRegression(max_iter=3000, class_weight="balanced", C=8.0)
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 yp = cross_val_predict(clf(), X, y, cv=skf)
 macro = f1_score(y, yp, average="macro")
-print(f"\n=== EMBED(nomic)+logreg 5-fold CV ===")
+print("\n=== EMBED(nomic)+logreg 5-fold CV ===")
 print(f"macro-F1(pooled) = {macro:.3f}")
 print(classification_report(y, yp, digits=3, zero_division=0))
 labs = sorted(keep)

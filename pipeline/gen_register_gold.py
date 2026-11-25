@@ -3,7 +3,11 @@
 klasyfikatora e5 na prawdzie, nie silver). Pelny tekst do 1500 zn.
 Uzycie: python gen_register_gold.py <numer> [N]"""
 
-import sys, json, random, pyarrow.parquet as pq
+import json
+import random
+import sys
+
+import pyarrow.parquet as pq
 from garbage_rules import detect
 from paths import EVAL_SETS, data_root, notes_dir
 

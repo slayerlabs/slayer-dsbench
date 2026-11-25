@@ -3,8 +3,14 @@
 (cap ~1.89B wg sum przebiegu web), manifesty (sha256 + tokeny + rozklad rejestrow + SA), sample.jsonl,
 aktualizacja dataset.json. Idempotentne: pomija istniejace pliki wyjsciowe (restart-safe)."""
 
-import glob, os, json, hashlib, time
-import pyarrow as pa, pyarrow.parquet as pq
+import glob
+import hashlib
+import json
+import os
+import time
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 from paths import data_root
 
 SCHEMA = pa.schema(
@@ -60,7 +66,6 @@ def stream(src_files, out, classified_by, sa_route=False, sa_out=None, bs=4000):
         for f in src_files:
             pf = pq.ParquetFile(f)
             has_sa = "is_share_alike" in pf.schema_arrow.names
-            cols = None
             for batch in pf.iter_batches(batch_size=bs):
                 d = batch.to_pydict()
                 if sa_route and has_sa:

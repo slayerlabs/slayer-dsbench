@@ -1,8 +1,12 @@
 """e5 embedding na GPU przez transformers (bez sentence-transformers -> rocm-torch nietkniety).
 mean-pool + L2-norm + prefix 'passage: ', fp16. Reużywane przez embed_silver i tag_web."""
 
-import json, numpy as np, torch, torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
+import json
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+from transformers import AutoModel, AutoTokenizer
 
 _tok = _mdl = None
 _dev = "cuda" if torch.cuda.is_available() else "cpu"

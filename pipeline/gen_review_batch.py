@@ -2,7 +2,11 @@
 """Generuje partie human-review (active-learning). Skala POLSKA: zostaw/wytnij/usuń. Nazwy regul po polsku.
 Uzycie: python gen_review_batch.py <numer> [K_usun K_wytnij K_losowe]"""
 
-import sys, json, random, pyarrow.parquet as pq
+import json
+import random
+import sys
+
+import pyarrow.parquet as pq
 from garbage_rules import detect
 from paths import EVAL_SETS, data_root, notes_dir
 

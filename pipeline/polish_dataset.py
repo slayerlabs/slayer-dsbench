@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """polish_dataset.py — post-process bin-parquet: naprawia bledy z QC-review Arka.
 Fix 1: leading 'Strona X z Y' header strip.
 Fix 2: intra-word '?' artefakt (upstream HPLT diacritic-loss, lc-PL?lc-PL non-URL) -> usun '?'.
@@ -6,9 +5,13 @@ Fix 3: block-level frame_merge: strip CONTIGUOUS runy >=MINRUN high-doc-freq lin
        ZOSTAW izolowane high-freq linie (Pozdrawiam/Witam = conversational, nie template). FP-safe.
 Niedestrukcyjnie: bez --apply = dry-run + pokazuje co by uciete (FP-check)."""
 
-import re, argparse, glob
+import argparse
+import glob
+import re
 from collections import Counter
-import pyarrow as pa, pyarrow.parquet as pq
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 _ws = re.compile(r"\s+")
 

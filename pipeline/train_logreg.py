@@ -1,10 +1,12 @@
 """Trenuje logreg na osadzeniach silver (regcls venv, sklearn) -> eksport coef/intercept/classes do npz.
 Inferencja pozniej pure-numpy w rocm-torch (bez sklearn tam)."""
 
-import json, numpy as np
+import json
 from collections import Counter
-from sklearn.linear_model import LogisticRegression
+
+import numpy as np
 from paths import EVAL_SETS as ES
+from sklearn.linear_model import LogisticRegression
 
 X = np.load(f"{ES}/silver_emb.npy")
 y = json.load(open(f"{ES}/silver_labels.json"))

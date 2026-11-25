@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """auto-clean-pass (Wartownik idea): trim mangle-artefakty [Telefon]<przylegla-cyfra/myslnik><cluster>.
 KONSERWATYWNIE: tylko DIRECTLY-adjacent (bez spacji) = mangle-remnant; space-separated (legit '[Telefon] 24h') NIEtkniete.
 Uzycie: python auto_clean_mangle.py <parquet>...  (in-place, po batchu przed preview)
 """
 
-import sys, re
-import pyarrow as pa, pyarrow.parquet as pq
+import re
+import sys
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 # mangle-remnant: cyfry bezposrednio przylegle do [Telefon] (trailing LUB leading) -> trim
 MANGLE_T = re.compile(r"\[Telefon\][-\d][\d \-]*")  # trailing: [Telefon]0 0000 / [Telefon]4 / [Telefon]-63

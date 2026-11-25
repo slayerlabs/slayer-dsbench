@@ -1,8 +1,11 @@
 """Walidacja DEKLARATYWNA (schema-driven). Silnik nie zna nazw pól — czyta je z formatki."""
 
 from __future__ import annotations
-import yaml
+
 import pathlib
+
+import yaml
+
 from .models import Issue
 
 _TYPES = {

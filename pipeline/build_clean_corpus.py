@@ -10,7 +10,12 @@ Czyszczenie boilerplate (2 warstwy, po odkryciu residualu 394k embedded Odpowied
 Usage: python build_clean_corpus.py TRAIN_OUT.bin VAL_OUT.bin
 """
 
-import sys, time, re, numpy as np, pyarrow.parquet as pq
+import re
+import sys
+import time
+
+import numpy as np
+import pyarrow.parquet as pq
 from tokenizers import Tokenizer
 
 sys.path.insert(0, r"C:/tmp/dsbench-monter")

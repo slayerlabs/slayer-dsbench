@@ -1,12 +1,14 @@
 """CLI — cienki adapter nad silnikiem (ten sam kod co CI). Karta może deklarować `format`."""
 
 from __future__ import annotations
+
 import argparse
 import pathlib
 import sys
+
+from . import registry
 from .engine import audit
 from .schema import load_card
-from . import registry
 
 CARD_TEMPLATE = """name: <nazwa>
 version: 0.1.0

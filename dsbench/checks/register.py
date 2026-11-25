@@ -3,7 +3,9 @@ FAIL-LOUD: gdy check włączony a pole register nieobecne = błąd (dataset nie 
 Pola z formatki: `register_field` (dom. 'register'), `garbage_field` (dom. 'garbage')."""
 
 from __future__ import annotations
+
 from collections import Counter
+
 from ..models import Issue
 from ..registry import check
 

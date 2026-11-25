@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """dedup_normalized.py — hash-dedup track B vs baza (i intra-cand).
 MinHash near_dup za wolny (~500 docs/s pure-python = 4.5h na 8M). Tu: hash SUROWEGO tekstu (norm = identycznosc;
 strip placeholderow i collapse-ws/lower pominiete jako za drogie) -> te-same-zrodlowe docs lacza sie, gdy scrub
@@ -7,10 +6,16 @@ Full-hash (identyczne) + prefix-hash (truncation/containment). Streaming, out-of
 Uzycie: python dedup_normalized.py --ref "<base glob>" --cand-glob "<trackB glob>" --outdir <dir> [--prefix-chars 200]
 """
 
-import argparse, os, re, sys, time, hashlib, glob
+import argparse
+import glob
+import hashlib
+import os
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import pyarrow as pa, pyarrow.parquet as pq
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 
 def norm(x):

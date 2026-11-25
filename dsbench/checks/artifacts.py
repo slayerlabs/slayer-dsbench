@@ -15,7 +15,9 @@ Dwie klasy wg dyscypliny FP:
 """
 
 from __future__ import annotations
+
 import re
+
 from ..models import Issue
 from ..registry import check
 from ..textextract import texts

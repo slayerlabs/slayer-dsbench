@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """near_dup_vs_dynaword.py — cross-source near-dedup: dropuj kandydatów (HPLT-cleaned)
 near-duplikatowych względem ISTNIEJĄCEGO korpusu (dynaword). Luka z PR#5 („near_dup left downstream").
 
@@ -11,9 +10,16 @@ Użycie:
   --limit-ref N (sample ref dla feasibility) · --out kept.parquet (opcjonalnie zapis odsianych)
 """
 
-import re, time, glob, argparse, zlib, hashlib
+import argparse
+import glob
+import hashlib
+import re
+import time
+import zlib
+
 import numpy as np
-import pyarrow as pa, pyarrow.parquet as pq
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 WORD = re.compile(r"\w+", re.UNICODE)
 P = 2**31 - 1

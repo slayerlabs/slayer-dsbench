@@ -2,8 +2,14 @@
 # Recovery literacki__ext (uszkodzony na dysku, 31/31 rg zle) -> odbudowa z 4 zrodel dynaword.
 # Wzorzec: recover_nauka_enc.py. exact-dedup(sha256 norm) + decontam(eval 8-gram) + ATOMIC write_table.
 # Per-row is_share_alike (wikisource/wolne_lektury=SA) -> assemble routuje do core_sa.
-import os, re, json, time, hashlib
-import pyarrow as pa, pyarrow.parquet as pq
+import hashlib
+import json
+import os
+import re
+import time
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 import tiktoken
 from paths import data_root
 

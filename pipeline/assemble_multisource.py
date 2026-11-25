@@ -7,7 +7,14 @@ Sampling losowy przy treningu (get_batch randint) => concat wystarcza, NIE pre-s
 Usage: python assemble_multisource.py --hplt-tok 1.0e9 --curated-tok 1.0e9 --legal-tok 0 --out-train T.bin --out-val V.bin
 """
 
-import argparse, sys, time, re, random, numpy as np, pyarrow.parquet as pq
+import argparse
+import random
+import re
+import sys
+import time
+
+import numpy as np
+import pyarrow.parquet as pq
 from tokenizers import Tokenizer
 
 sys.path.insert(0, r"C:/tmp/dsbench-monter")

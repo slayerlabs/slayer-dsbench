@@ -5,8 +5,12 @@ Batch-03 (Arek 15 werdyktow): 'teaser_listing >=3' OBALONE jako kill -> to STRIP
 2/15 usun); licznik nie rozroznia. Kill tylko wysokoprecyzyjne sygnatury spamu.
 Uzycie: python garbage_rules.py [N]"""
 
-import sys, re, json, pyarrow.parquet as pq
+import json
+import re
+import sys
 from collections import Counter
+
+import pyarrow.parquet as pq
 
 RX = {
     "dating_profile": re.compile(
